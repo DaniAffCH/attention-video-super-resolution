@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from torch import nn 
-
+import torch
 
 class Feature_Extraction(nn.Module):
     """
@@ -9,8 +9,9 @@ class Feature_Extraction(nn.Module):
     """
 
     def __init__(self, num_feat):
-        self.conv1 = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True) 
-        self.conv2 = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
+        super().__init__()
+        self.conv1 = nn.Conv2d(num_feat, num_feat, 3, 1, 1) 
+        self.conv2 = nn.Conv2d(num_feat, num_feat, 3, 1, 1)
         self.relu = nn.ReLU(inplace=True)
 
 
@@ -20,6 +21,7 @@ class Feature_Extraction(nn.Module):
 class AttentionModule(nn.Module):
    
     def __init__(self,num_features):
+        super().__init__()
         self.num_features=num_features
 
 
@@ -29,7 +31,7 @@ class AttentionModule(nn.Module):
 
 class Generator(nn.Module):
     def __init__(self,num_frame,num_extr_blocks,num_ch_in,num_features):
-
+        super().__init__()
         self.num_ch_in=num_ch_in
         self.num_frame=num_frame
         self.num_features=num_features
@@ -43,10 +45,10 @@ class Generator(nn.Module):
             self.feat_ex.append(Feature_Extraction(num_features))
         
         #prepare the features for the pyramid
-        self.l1_to_l2=nn.Conv2d(num_features, num_features, 3, 2, 1, bias=True) #stride 2 to half the dimensions
-        self.l2_to_l2=nn.Conv2d(num_features, num_features, 3, 1, 1, bias=True) 
-        self.l2_to_l3=nn.Conv2d(num_features, num_features, 3, 2, 1, bias=True) 
-        self.l3_to_l3=nn.Conv2d(num_features, num_features, 3, 1, 1, bias=True) 
+        self.l1_to_l2=nn.Conv2d(num_features, num_features, 3, 2, 1) #stride 2 to half the dimensions
+        self.l2_to_l2=nn.Conv2d(num_features, num_features, 3, 1, 1) 
+        self.l2_to_l3=nn.Conv2d(num_features, num_features, 3, 2, 1) 
+        self.l3_to_l3=nn.Conv2d(num_features, num_features, 3, 1, 1) 
 
 
     def forward(self,x):
@@ -57,7 +59,7 @@ class Generator(nn.Module):
 
         """
         b, t, c, h, w = x.size()
-        z=x.view(-1,c,h,w) #to do the 2d convolution 
+        z=x.contiguous().view(-1,c,h,w) #to do the 2d convolution 
 
         #L1 first layer of the pyramid
         #(d,3,h,w)---->(d,num_features,h,w)
@@ -77,3 +79,5 @@ class Generator(nn.Module):
         l2 = l2.view(b, t, -1, h//2, w//2) 
         l3 = l3.view(b, t, -1, h//4, w//4)
         #feature alignment
+
+        return l1
