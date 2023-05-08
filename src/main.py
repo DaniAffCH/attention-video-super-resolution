@@ -26,7 +26,7 @@ def main():
         print("settings loaded")
 
     if(args.debug):
-        autotest()
+        autotest(config)
     
 if __name__ == '__main__':
     main()
