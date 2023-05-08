@@ -16,7 +16,7 @@ def autotest(conf):
 
         data_loader = torch.utils.data.DataLoader(
             sl,
-            batch_size=8
+            batch_size=4
         )
 
         sample = next(iter(data_loader))
@@ -35,11 +35,11 @@ def autotest(conf):
     tot+=1
 
     try:
-        s=torch.stack(sample["images"],dim=0)
+        s=torch.stack(sample["images"],dim=0)  #need normalization because of the too large size->program crashes
         s=s.to(torch.float32)
         s=s.permute(1,0,4,2,3)
         print(s.shape)
-        g= generator.Generator(8,1,3,64)
+        g= generator.Generator(4,1,3,8)
         y=g(s)
         print(y.shape)
         print("[TEST] Generator flow... "+OK)

@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from torch import nn 
 import torch
 
-class Feature_Extraction(nn.Module):
+class Feature_Extraction(nn.Module):            #we need residual for the vanishing of the gradient
     """
     (d,num_features,h,w)---->(d,num_features,h,w)
     """
@@ -16,7 +16,8 @@ class Feature_Extraction(nn.Module):
 
 
     def forward(self, x):
-        return self.conv2(self.relu(self.conv1(x)))
+        x=self.conv2(self.relu(self.conv1(x)))
+        return x
     
 class AttentionModule(nn.Module):
    
@@ -35,6 +36,7 @@ class Generator(nn.Module):
         self.num_ch_in=num_ch_in
         self.num_frame=num_frame
         self.num_features=num_features
+        self.num_extr_blocks=num_extr_blocks
 
         #blocks
         self.first_conv=nn.Conv2d(num_ch_in, num_features, 3, 1, 1)    
@@ -60,20 +62,17 @@ class Generator(nn.Module):
         """
         b, t, c, h, w = x.size()
         z=x.contiguous().view(-1,c,h,w) #to do the 2d convolution 
-
         #L1 first layer of the pyramid
         #(d,3,h,w)---->(d,num_features,h,w)
         l1=self.lrelu(self.first_conv(z))
-        for fe in enumerate(self.feat_ex):
+        for l,fe in enumerate(self.feat_ex):
             l1=fe(l1)
-        l1=self.feat_ex(l1)
         #L2
         l2=self.lrelu(self.l1_to_l2(l1))
         l2=self.lrelu(self.l2_to_l2(l2))
         #L3
         l3=self.lrelu(self.l2_to_l3(l2))
         l3=self.lrelu(self.l3_to_l3(l3))
-
         #turn back to 5 dimension with a pack of features for each frame
         l1 = l1.view(b, t, -1, h, w)       
         l2 = l2.view(b, t, -1, h//2, w//2) 
