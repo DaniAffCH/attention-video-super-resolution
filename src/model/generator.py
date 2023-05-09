@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from torch import nn 
 import torch
 from utils import utils
-
+from torchvision import ops
 class Feature_Extraction(nn.Module):            #we need residual for the vanishing of the gradient or can be replaced by pre-trained VGG
     """
     (d,num_features,h,w)---->(d,num_features,h,w)
@@ -22,7 +22,7 @@ class Feature_Extraction(nn.Module):            #we need residual for the vanish
     
 
 class Alignment(nn.MOdule):
-    def __init__(self,num_features,deformable,num_level=3):   
+    def __init__(self,num_features,num_level=3):   
         super().__init__()
         #need a conv for each level
         self.first_conv=nn.ModuleList([])
@@ -36,21 +36,21 @@ class Alignment(nn.MOdule):
                 self.second_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
 
 
-
     def forward(self,central_frame_feature_list,neighb_feature_list):
         #first we have to concatenate the offset starting from the lowest level of the pyramid
         level=3
         upsampled_off=None
         while(level):
             offset=torch.cat([central_frame_feature_list[level-1],neighb_feature_list[level-1]],dim=1) #now we have 2*num_features channels
-            offset=self.lrelu(self.first_conv[level-1](offset)) #learn the offset
+            offset=self.lrelu(self.first_conv[level-1](offset)) #learn the offset, it says were the kernel must be applied for the convolution, as if the feature were aligned (the kernels goes to the same part of the object)
             if level==3:
                 offset=self.second_conv[level-1](offset)
             else: 
                 offset=self.second_conv[level-1](torch.cat([offset,upsampled_off],dim=1))
 
-            #deformable convolution
-            
+            #deformable convolution DConv(F t+i, ∆P lt+i ) 
+            ops.deform_conv2d(neighb_feature_list[level-1],offset,)
+
 
             if(level>1):
                 upsampled_off=utils.bilinear_upsample(offset,2)
@@ -98,7 +98,7 @@ class Generator(nn.Module):
         self.l2_to_l3=nn.Conv2d(num_features, num_features, 3, 2, 1) 
         self.l3_to_l3=nn.Conv2d(num_features, num_features, 3, 1, 1) 
 
-        self.align=Alignment(num_features,deformable)
+        self.align=Alignment(num_features)
         self.attn=AttentionModule(num_features)
 
 
@@ -153,4 +153,4 @@ class Generator(nn.Module):
 
 
 
-        return l2
+        return fused_feature
