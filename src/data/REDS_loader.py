@@ -34,11 +34,7 @@ class REDS_loader(Dataset):
         video, frame = self.samples[idx].split("/")
         window = list(range( int(frame) - self.neighborsWindow, int(frame) + self.neighborsWindow + 1))
         
-
-        neighbors_images_blur = [cv2.imread(f"{self.blurdir}/{video}/{elem:08d}.png") for elem in window]
-
-        dic = {f"image{i}":neighbors_images_blur[i] for i in range(len(neighbors_images_blur))}
-
+        dic = {f"image{i}":cv2.imread(f"{self.blurdir}/{video}/{elem:08d}.png") for i, elem in enumerate(window)}
         dic["image"] = cv2.imread(f"{self.sharpdir}/{video}/{frame}.png")
         trans = self.transform(**dic)
 

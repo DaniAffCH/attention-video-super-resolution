@@ -16,8 +16,6 @@ def autotest(conf):
         data_loader = getDataLoader(conf)
         sample = next(iter(data_loader))
 
-        print(sample["x"][len(sample["x"])//2][0].numpy())
-
         # "x" is images/referencePath  x  element in the list of neighbors x batch element
         if conf['DEFAULT'].getboolean("debugging"):
             cv2.imshow("BLUR_"+sample["referencePath"][0], sample["x"][len(sample["x"])//2][0].numpy())
