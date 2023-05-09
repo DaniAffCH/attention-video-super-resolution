@@ -16,12 +16,12 @@ def autotest(conf):
 
         data_loader = torch.utils.data.DataLoader(
             rl,
-            batch_size=4
+            batch_size=conf['DEFAULT'].getint("batch_size")
         )
 
         sample = next(iter(data_loader))
 
-        # sample is images/referencePath  x  element in the list of neighbors x batch element
+        # "x" is images/referencePath  x  element in the list of neighbors x batch element
         if conf['DEFAULT'].getboolean("debugging"):
             cv2.imshow("BLUR_"+sample["referencePath"][0], sample["x"][len(sample["x"])//2][0].numpy())
             cv2.waitKey()

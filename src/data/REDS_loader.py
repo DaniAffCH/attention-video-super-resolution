@@ -3,6 +3,16 @@ import cv2
 import os
 
 # TODO: add transformations
+
+"""
+    Methods
+    -------
+    __getitem__(idx):
+        It takes an index (possibly provided from torch data loader) and returns a dictionary.
+        - x represents the list of neighbors blurred images (including the target one)
+        - y represents the sharp image (which refers to the target)
+        - referencePath contains the description of the target processed i.e. the video it belongs to and the frame number  
+    """
 class REDS_loader(Dataset):
     def __init__(self, conf):
         self.sharpdir =  os.path.join(conf["DATASET"]["root"], "train_sharp/train/train_sharp")
