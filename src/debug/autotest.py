@@ -37,7 +37,7 @@ def autotest(conf):
     tot+=1
 
     try:
-        s=torch.stack(sample["images"],dim=0)  #need normalization because of the too large size->program crashes
+        s=torch.stack(sample["x"],dim=0)  #need normalization because of the too large size->program crashes
         s=s.to(torch.float32)
         s=s.permute(1,0,4,2,3)
         print(s.shape)
