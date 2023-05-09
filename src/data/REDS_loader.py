@@ -1,8 +1,8 @@
 from torch.utils.data import Dataset
 import cv2
 import os
-
-# TODO: add transformations
+import albumentations as A
+import torch
 
 """
     Methods
@@ -14,9 +14,10 @@ import os
         - referencePath contains the description of the target processed i.e. the video it belongs to and the frame number  
     """
 class REDS_loader(Dataset):
-    def __init__(self, conf):
+    def __init__(self, conf, transform):
         self.sharpdir =  os.path.join(conf["DATASET"]["root"], "train_sharp/train/train_sharp")
         self.blurdir = os.path.join(conf["DATASET"]["root"], "train_blur/train/train_blur")
+        self.transform = transform
 
         maxsharp = max([int(i) for i in os.listdir(self.sharpdir)])
         maxblur = max([int(i) for i in os.listdir(self.blurdir)])
@@ -32,9 +33,36 @@ class REDS_loader(Dataset):
     def __getitem__(self, idx):
         video, frame = self.samples[idx].split("/")
         window = list(range( int(frame) - self.neighborsWindow, int(frame) + self.neighborsWindow + 1))
+        
 
         neighbors_images_blur = [cv2.imread(f"{self.blurdir}/{video}/{elem:08d}.png") for elem in window]
-        target_sharp = cv2.imread(f"{self.sharpdir}/{video}/{frame}.png")
+
+        dic = {f"image{i}":neighbors_images_blur[i] for i in range(len(neighbors_images_blur))}
+
+        dic["image"] = cv2.imread(f"{self.sharpdir}/{video}/{frame}.png")
+        trans = self.transform(**dic)
+
+        target_sharp = trans["image"]
+        del trans["image"]
+        neighbors_images_blur = list(trans.values())
 
         return {"x":neighbors_images_blur, "y":target_sharp, "referencePath": f"{video}/{frame}.png"}
 
+def getDataLoader(conf):
+    targetdict = {f"image{k}":"image" for k in range(conf["DEFAULT"].getint("n_neighbors") * 2 + 1)}
+
+    transform = A.Compose([
+        A.ToFloat(max_value=255, always_apply=True, p=1.0),
+        A.Rotate(limit = 60, p=0.3),
+        A.HorizontalFlip(p=0.5),
+        A.RandomBrightnessContrast(p=0.2)
+    ], additional_targets = targetdict)
+
+    rl = REDS_loader(conf, transform)
+
+    data_loader = torch.utils.data.DataLoader(
+        rl,
+        batch_size=conf['DEFAULT'].getint("batch_size")
+    )
+
+    return data_loader

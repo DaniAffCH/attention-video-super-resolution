@@ -1,8 +1,9 @@
 from __future__ import absolute_import
-from data.REDS_loader import REDS_loader  
+from data.REDS_loader import getDataLoader  
 from model import generator
 import torch
 import cv2
+import albumentations as A
 
 OK = "\033[92m[PASSED]\033[0m"
 NO = "\033[91m[FAILED]\033[0m"
@@ -12,14 +13,10 @@ def autotest(conf):
     passed = 0
 
     try:
-        rl = REDS_loader(conf)
-
-        data_loader = torch.utils.data.DataLoader(
-            rl,
-            batch_size=conf['DEFAULT'].getint("batch_size")
-        )
-
+        data_loader = getDataLoader(conf)
         sample = next(iter(data_loader))
+
+        print(sample["x"][len(sample["x"])//2][0].numpy())
 
         # "x" is images/referencePath  x  element in the list of neighbors x batch element
         if conf['DEFAULT'].getboolean("debugging"):
