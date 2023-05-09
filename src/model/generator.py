@@ -2,8 +2,9 @@ from __future__ import absolute_import
 
 from torch import nn 
 import torch
-from utils import utils
+import utils 
 from torchvision import ops
+from torch.nn.modules.utils import _pair
 class Feature_Extraction(nn.Module):            #we need residual for the vanishing of the gradient or can be replaced by pre-trained VGG
     """
     (d,num_features,h,w)---->(d,num_features,h,w)
@@ -20,26 +21,42 @@ class Feature_Extraction(nn.Module):            #we need residual for the vanish
         x=self.conv2(self.relu(self.conv1(x)))
         return x
     
+class DeformConvBlock(nn.Module):
+    def __init__(self,in_channels,out_channels,groups,kernel_size):
+        super().__init__()
+        self.kernel_size=_pair(kernel_size)
+        self.weight = nn.Parameter(torch.Tensor(out_channels, in_channels // groups, *self.kernel_size))
 
-class Alignment(nn.MOdule):
+    def forward(self,input,offset):
+        out=ops.deform_conv2d(input,offset,self.weight,None,1,1,1)
+        return out
+
+class Alignment(nn.Module):
     def __init__(self,num_features,num_level=3):   
         super().__init__()
         #need a conv for each level
         self.first_conv=nn.ModuleList([])
         self.second_conv=nn.ModuleList([])
         self.lrelu=nn.LeakyReLU()
+        self.deform_conv=nn.ModuleList([])
+        self.feat_conv=nn.ModuleList([])
         for i in range(num_level):
             self.first_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
             if(i==3):
                 self.second_conv.append(nn.Conv2d(num_features, num_features, 3, 1, 1))
+                self.feat_conv.append(nn.Conv2d(num_features, num_features, 3, 1, 1)) 
             else: #double of the feature because the concatenation of the previous level offset
                 self.second_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
+                self.feat_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))  #we use also the aligned feature of the previous level to predict the next
+            self.deform_conv.append(DeformConvBlock(num_features,num_features,1,3))
+            
 
 
     def forward(self,central_frame_feature_list,neighb_feature_list):
         #first we have to concatenate the offset starting from the lowest level of the pyramid
         level=3
         upsampled_off=None
+        upsampled_feat=None
         while(level):
             offset=torch.cat([central_frame_feature_list[level-1],neighb_feature_list[level-1]],dim=1) #now we have 2*num_features channels
             offset=self.lrelu(self.first_conv[level-1](offset)) #learn the offset, it says were the kernel must be applied for the convolution, as if the feature were aligned (the kernels goes to the same part of the object)
@@ -49,19 +66,19 @@ class Alignment(nn.MOdule):
                 offset=self.second_conv[level-1](torch.cat([offset,upsampled_off],dim=1))
 
             #deformable convolution DConv(F t+i, ∆P lt+i ) 
-            ops.deform_conv2d(neighb_feature_list[level-1],offset,)
-
+            aligned_feat=self.deform_conv[level-1](neighb_feature_list[level-1],offset)
 
             if(level>1):
                 upsampled_off=utils.bilinear_upsample(offset,2)
+                print(offset.shape,upsampled_off.shape)
+                upsampled_feat=utils.bilinear_upsample(aligned_feat,2)
 
-
-
-
+                if level < 3:  #g( DConv(F t+i, ∆P lt+i ), ((F t+i)3l+1 ↑2))
+                    self.lrelu(aligned_feat=self.feat_conv[level-1](torch.cat([aligned_feat, upsampled_feat], dim=1)))
 
 
             level-=1
-        return 
+        return aligned_feat
 
 
 class AttentionModule(nn.Module):
