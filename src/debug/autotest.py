@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from data.sharp_loader import SharpLoader  
+from data.REDS_loader import REDS_loader  
 import torch
 import cv2
 
@@ -11,10 +11,10 @@ def autotest(conf):
     passed = 0
 
     try:
-        sl = SharpLoader(conf)
+        rl = REDS_loader(conf)
 
         data_loader = torch.utils.data.DataLoader(
-            sl,
+            rl,
             batch_size=8
         )
 
@@ -22,7 +22,9 @@ def autotest(conf):
 
         # sample is images/referencePath  x  element in the list of neighbors x batch element
         if conf['DEFAULT'].getboolean("debugging"):
-            cv2.imshow(sample["referencePath"][0], sample["images"][len(sample["images"])//2][0].numpy())
+            cv2.imshow("BLUR_"+sample["referencePath"][0], sample["x"][len(sample["x"])//2][0].numpy())
+            cv2.waitKey()
+            cv2.imshow("SHARP_"+sample["referencePath"][0], sample["y"][0].numpy())
             cv2.waitKey()
 
         print("[TEST] Dataset loading... "+OK)
