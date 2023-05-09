@@ -1,2 +1,2 @@
 # attention-video-super-resolution
-This model accomplish a video super resolution task in a time efficient fashion by exploiting the self-attention and dynamic filtering
+This model accomplish a lightweight video super resolution task by exploiting the self-attention and dynamic filtering
