@@ -2,8 +2,9 @@ from __future__ import absolute_import
 
 from torch import nn 
 import torch
+from utils import utils
 
-class Feature_Extraction(nn.Module):            #we need residual for the vanishing of the gradient
+class Feature_Extraction(nn.Module):            #we need residual for the vanishing of the gradient or can be replaced by pre-trained VGG
     """
     (d,num_features,h,w)---->(d,num_features,h,w)
     """
@@ -19,6 +20,50 @@ class Feature_Extraction(nn.Module):            #we need residual for the vanish
         x=self.conv2(self.relu(self.conv1(x)))
         return x
     
+
+class Alignment(nn.MOdule):
+    def __init__(self,num_features,deformable,num_level=3):   
+        super().__init__()
+        #need a conv for each level
+        self.first_conv=nn.ModuleList([])
+        self.second_conv=nn.ModuleList([])
+        self.lrelu=nn.LeakyReLU()
+        for i in range(num_level):
+            self.first_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
+            if(i==3):
+                self.second_conv.append(nn.Conv2d(num_features, num_features, 3, 1, 1))
+            else: #double of the feature because the concatenation of the previous level offset
+                self.second_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
+
+
+
+    def forward(self,central_frame_feature_list,neighb_feature_list):
+        #first we have to concatenate the offset starting from the lowest level of the pyramid
+        level=3
+        upsampled_off=None
+        while(level):
+            offset=torch.cat([central_frame_feature_list[level-1],neighb_feature_list[level-1]],dim=1) #now we have 2*num_features channels
+            offset=self.lrelu(self.first_conv[level-1](offset)) #learn the offset
+            if level==3:
+                offset=self.second_conv[level-1](offset)
+            else: 
+                offset=self.second_conv[level-1](torch.cat([offset,upsampled_off],dim=1))
+
+            #deformable convolution
+            
+
+            if(level>1):
+                upsampled_off=utils.bilinear_upsample(offset,2)
+
+
+
+
+
+
+            level-=1
+        return 
+
+
 class AttentionModule(nn.Module):
    
     def __init__(self,num_features):
@@ -37,6 +82,7 @@ class Generator(nn.Module):
         self.num_frame=num_frame
         self.num_features=num_features
         self.num_extr_blocks=num_extr_blocks
+        self.center_frame_index = num_frame // 2
 
         #blocks
         self.first_conv=nn.Conv2d(num_ch_in, num_features, 3, 1, 1)    
@@ -51,6 +97,9 @@ class Generator(nn.Module):
         self.l2_to_l2=nn.Conv2d(num_features, num_features, 3, 1, 1) 
         self.l2_to_l3=nn.Conv2d(num_features, num_features, 3, 2, 1) 
         self.l3_to_l3=nn.Conv2d(num_features, num_features, 3, 1, 1) 
+
+        self.align=Alignment(num_features,deformable)
+        self.attn=AttentionModule(num_features)
 
 
     def forward(self,x):
@@ -78,5 +127,30 @@ class Generator(nn.Module):
         l2 = l2.view(b, t, -1, h//2, w//2) 
         l3 = l3.view(b, t, -1, h//4, w//4)
         #feature alignment
+        #need 2 list, one with the features from  all the levels of the pyramid belonging to the central frame 
+        #(the one we want to upgrade)
+        #another for the neighbor
+        central_frame_feature_list=[ 
+            l1[:, self.center_frame_index, :, :, :].clone(),
+            l2[:, self.center_frame_index, :, :, :].clone(),
+            l3[:, self.center_frame_index, :, :, :].clone()
+        ]
+        aligned_feature_list=[]
+        for i in range(t):            #align each frame features to the center frame features
+            neighb_feature_list=[ 
+                l1[:, i, :, :, :].clone(),
+                l2[:, i, :, :, :].clone(),
+                l3[:, i, :, :, :].clone()
+            ]
+            aligned_feature=self.align(central_frame_feature_list,neighb_feature_list)
+            aligned_feature_list.append(aligned_feature)
+        aligned_tensor=torch.stack(aligned_feature_list,dim=1)
 
-        return l1
+        #fusion of the features using cross temporal and spatial attention information
+        fused_feature=self.attn(aligned_tensor)
+
+        #reconstruction phase
+
+
+
+        return l2
