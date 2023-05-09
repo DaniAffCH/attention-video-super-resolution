@@ -42,7 +42,7 @@ class Alignment(nn.Module):
         self.feat_conv=nn.ModuleList([])
         for i in range(num_level):
             self.first_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
-            if(i==3):
+            if(i==2):
                 self.second_conv.append(nn.Conv2d(num_features, num_features, 3, 1, 1))
                 self.feat_conv.append(nn.Conv2d(num_features, num_features, 3, 1, 1)) 
             else: #double of the feature because the concatenation of the previous level offset
@@ -66,6 +66,7 @@ class Alignment(nn.Module):
                 offset=self.second_conv[level-1](torch.cat([offset,upsampled_off],dim=1))
 
             #deformable convolution DConv(F t+i, ∆P lt+i ) 
+            print(offset.shape)
             aligned_feat=self.deform_conv[level-1](neighb_feature_list[level-1],offset)
 
             if(level>1):
