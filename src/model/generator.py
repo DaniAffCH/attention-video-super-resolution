@@ -22,13 +22,17 @@ class Feature_Extraction(nn.Module):            #we need residual for the vanish
         return x
     
 class DeformConvBlock(nn.Module):
-    def __init__(self,in_channels,out_channels,groups,kernel_size):
+    def __init__(self,in_channels,out_channels,kernel_size):
         super().__init__()
         self.kernel_size=_pair(kernel_size)
-        self.weight = nn.Parameter(torch.Tensor(out_channels, in_channels // groups, *self.kernel_size))
+        self.groups=self.kernel_size[0]*self.kernel_size[1]
+        self.weight = nn.Parameter(torch.Tensor(out_channels, in_channels // self.groups, *self.kernel_size))
+
+        self.conv_for_offset=nn.Conv2d(in_channels,2*self.kernel_size[0]*self.kernel_size[1], 3, 1, 1) 
 
     def forward(self,input,offset):
-        out=ops.deform_conv2d(input,offset,self.weight,None,1,0,1)
+        offset=self.conv_for_offset(offset)
+        out=ops.deform_conv2d(input,offset,self.weight,None,stride=1,padding=1,dilation=1)
         return out
 
 class Alignment(nn.Module):
@@ -40,7 +44,7 @@ class Alignment(nn.Module):
         self.lrelu=nn.LeakyReLU()
         self.deform_conv=nn.ModuleList([])
         self.feat_conv=nn.ModuleList([])
-        for i in range(num_level):
+        for i in range(num_level): #each level has is weights
             self.first_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
             if(i==2):
                 self.second_conv.append(nn.Conv2d(num_features, num_features, 3, 1, 1))
@@ -48,7 +52,7 @@ class Alignment(nn.Module):
             else: #double of the feature because the concatenation of the previous level offset
                 self.second_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
                 self.feat_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))  #we use also the aligned feature of the previous level to predict the next
-            self.deform_conv.append(DeformConvBlock(num_features,num_features,1,1))
+            self.deform_conv.append(DeformConvBlock(num_features,num_features,kernel_size=3))
             
 
 
