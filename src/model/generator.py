@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from torch import nn 
 import torch
-import utils 
+from sr_utils.sr_utils import bilinear_upsample
 from torchvision import ops
 from torch.nn.modules.utils import _pair
 class Feature_Extraction(nn.Module):            #we need residual for the vanishing of the gradient or can be replaced by pre-trained VGG
@@ -28,7 +28,7 @@ class DeformConvBlock(nn.Module):
         self.weight = nn.Parameter(torch.Tensor(out_channels, in_channels // groups, *self.kernel_size))
 
     def forward(self,input,offset):
-        out=ops.deform_conv2d(input,offset,self.weight,None,1,1,1)
+        out=ops.deform_conv2d(input,offset,self.weight,None,1,0,1)
         return out
 
 class Alignment(nn.Module):
@@ -48,7 +48,7 @@ class Alignment(nn.Module):
             else: #double of the feature because the concatenation of the previous level offset
                 self.second_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
                 self.feat_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))  #we use also the aligned feature of the previous level to predict the next
-            self.deform_conv.append(DeformConvBlock(num_features,num_features,1,3))
+            self.deform_conv.append(DeformConvBlock(num_features,num_features,1,1))
             
 
 
@@ -64,19 +64,11 @@ class Alignment(nn.Module):
                 offset=self.second_conv[level-1](offset)
             else: 
                 offset=self.second_conv[level-1](torch.cat([offset,upsampled_off],dim=1))
-
             #deformable convolution DConv(F t+i, ∆P lt+i ) 
-            print(offset.shape)
             aligned_feat=self.deform_conv[level-1](neighb_feature_list[level-1],offset)
-
             if(level>1):
-                upsampled_off=utils.bilinear_upsample(offset,2)
-                print(offset.shape,upsampled_off.shape)
-                upsampled_feat=utils.bilinear_upsample(aligned_feat,2)
-
-                if level < 3:  #g( DConv(F t+i, ∆P lt+i ), ((F t+i)3l+1 ↑2))
-                    self.lrelu(aligned_feat=self.feat_conv[level-1](torch.cat([aligned_feat, upsampled_feat], dim=1)))
-
+                upsampled_off=bilinear_upsample(offset,2)
+                upsampled_feat=bilinear_upsample(aligned_feat,2)
 
             level-=1
         return aligned_feat

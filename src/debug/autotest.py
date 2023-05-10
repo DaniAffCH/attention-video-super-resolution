@@ -35,10 +35,10 @@ def autotest(conf):
         s=torch.stack(sample["x"],dim=0)  #need normalization because of the too large size->program crashes
         s=s.to(torch.float32)
         s=s.permute(1,0,4,2,3)
-        print(s.shape)
-        g= generator.Generator(4,1,3,8)
+        #print(s.shape)
+        g= generator.Generator(4,1,3,4)
         y=g(s)
-        print(y.shape)
+        #print(y.shape)
         print("[TEST] Generator flow... "+OK)
         passed+=1
     except Exception as e:
