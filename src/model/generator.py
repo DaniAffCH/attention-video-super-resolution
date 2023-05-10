@@ -88,14 +88,15 @@ class Alignment(nn.Module):
 
 class AttentionModule(nn.Module):
    
-    def __init__(self,num_features):
+    def __init__(self,num_features,center_frame_index):
         super().__init__()
+        self.center_frame_index=center_frame_index
         self.embeddings1=nn.Conv2d(num_features, num_features, 3, 1, 1)
         self.embeddings2=nn.Conv2d(num_features, num_features, 3, 1, 1)
 
 
-    def forward(self,x):
-        return x
+    def forward(self,aligned_feat):
+        return aligned_feat
         
 
 class Generator(nn.Module):
