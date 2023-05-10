@@ -90,7 +90,8 @@ class AttentionModule(nn.Module):
    
     def __init__(self,num_features):
         super().__init__()
-        self.num_features=num_features
+        self.embeddings1=nn.Conv2d(num_features, num_features, 3, 1, 1)
+        self.embeddings2=nn.Conv2d(num_features, num_features, 3, 1, 1)
 
 
     def forward(self,x):
@@ -166,7 +167,7 @@ class Generator(nn.Module):
             ]
             aligned_feature=self.align(central_frame_feature_list,neighb_feature_list)
             aligned_feature_list.append(aligned_feature)
-        aligned_tensor=torch.stack(aligned_feature_list,dim=1)
+        aligned_tensor=torch.stack(aligned_feature_list,dim=1) #now this are the tokens for the attention layer
 
         #fusion of the features using cross temporal and spatial attention information
         fused_feature=self.attn(aligned_tensor)
