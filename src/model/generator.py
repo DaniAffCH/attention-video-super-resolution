@@ -44,11 +44,12 @@ class Alignment(nn.Module):
         self.lrelu=nn.LeakyReLU()
         self.deform_conv=nn.ModuleList([])
         self.feat_conv=nn.ModuleList([])
+        self.final_conv_offset=nn.Conv2d(2*num_features, num_features, 3, 1, 1)
+        self.final_deform_conv=DeformConvBlock(num_features,num_features,kernel_size=3)
         for i in range(num_level): #each level has is weights
             self.first_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
             if(i==2):
                 self.second_conv.append(nn.Conv2d(num_features, num_features, 3, 1, 1))
-                self.feat_conv.append(nn.Conv2d(num_features, num_features, 3, 1, 1)) 
             else: #double of the feature because the concatenation of the previous level offset
                 self.second_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
                 self.feat_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))  #we use also the aligned feature of the previous level to predict the next
@@ -70,11 +71,18 @@ class Alignment(nn.Module):
                 offset=self.second_conv[level-1](torch.cat([offset,upsampled_off],dim=1))
             #deformable convolution DConv(F t+i, ∆P lt+i ) 
             aligned_feat=self.deform_conv[level-1](neighb_feature_list[level-1],offset)
+
+            if (level<3):
+                aligned_feat=self.feat_conv[level-1](torch.cat([aligned_feat,upsampled_feat],dim=1))
+
             if(level>1):
                 upsampled_off=bilinear_upsample(offset,2)
                 upsampled_feat=bilinear_upsample(aligned_feat,2)
-
             level-=1
+        #last cascading
+        final_offset=torch.cat([aligned_feat,central_frame_feature_list[0]],dim=1)
+        final_offset=self.final_conv_offset(final_offset)
+        aligned_feat=self.final_deform_conv(aligned_feat,final_offset)
         return aligned_feat
 
 

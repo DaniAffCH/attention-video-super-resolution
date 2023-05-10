@@ -36,7 +36,7 @@ def autotest(conf):
         s=s.to(torch.float32)
         s=s.permute(1,0,4,2,3)
         #print(s.shape)
-        g= generator.Generator(4,1,3,16)
+        g= generator.Generator(num_frame=5,num_extr_blocks=1,num_ch_in=3,num_features=16)
         y=g(s)
         #print(y.shape)
         print("[TEST] Generator flow... "+OK)
