@@ -102,7 +102,7 @@ class AttentionModule(nn.Module):
         b, t, c, h, w = aligned_feat.size()
         #temporal correlation(attention) for each couple of neighbors. Multihead attention would be more complex but useless(not so much temporal distance)
         query=self.query(aligned_feat[:,self.center_frame_index,:,:,:].clone())
-        keys=self.query(aligned_feat.view(-1,c,h,w))
+        keys=self.keys(aligned_feat.view(-1,c,h,w))
         keys=keys.view(b,t,-1,h,w)
 
         correlation=[]
