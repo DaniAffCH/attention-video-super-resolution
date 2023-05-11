@@ -202,5 +202,7 @@ class Generator(nn.Module):
         fused_feature=self.attn(aligned_tensor)
 
         #reconstruction phase
-        hq_image=self.restore(fused_feature)
-        return hq_image
+        residual=self.restore(fused_feature) #this has to be pixel-shuffled in order to get bigger
+        upsampled_x=x #this has to be bilinear upsampled
+        image_hq=upsampled_x+residual
+        return image_hq
