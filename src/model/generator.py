@@ -203,6 +203,6 @@ class Generator(nn.Module):
 
         #reconstruction phase
         residual=self.restore(fused_feature) #this has to be pixel-shuffled in order to get bigger
-        upsampled_x=x #this has to be bilinear upsampled
+        upsampled_x=x[:,self.center_frame_index,:,:,:] #this has to be bilinear upsampled
         image_hq=upsampled_x+residual
         return image_hq
