@@ -8,7 +8,6 @@ def bilinear_upsample(input, scale_factor):
     # B x C x H_up x W_up
     
     B, C, H, W = input.shape
-    
 
     H_up = H * scale_factor
     W_up = W * scale_factor
@@ -17,7 +16,7 @@ def bilinear_upsample(input, scale_factor):
     y = torch.linspace(-1, 1, H_up)
     x = torch.linspace(-1, 1, W_up)
     yy, xx = torch.meshgrid(y, x, indexing="ij")
-    grid = torch.stack((yy, xx), dim=2).unsqueeze(0).repeat(B, 1, 1, 1)
+    grid = torch.stack((yy, xx), dim=2).unsqueeze(0).repeat(B, 1, 1, 1).to(input.device)
     
     # Normalizza le coordinate per il tensore originale
     grid = grid * torch.tensor([H-1, W-1], dtype=torch.float32).to(input.device)

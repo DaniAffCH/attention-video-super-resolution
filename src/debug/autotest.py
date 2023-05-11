@@ -12,6 +12,9 @@ def autotest(conf):
     tot = 0
     passed = 0
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(f"Using {device}")
+
     try:
         data_loader = getDataLoader(conf)
         sample = next(iter(data_loader))
@@ -33,9 +36,9 @@ def autotest(conf):
 
     try:
         s=torch.stack(sample["x"],dim=0)  #need normalization because of the too large size->program crashes
-        s=s.to(torch.float32)
-        s=s.permute(1,0,4,2,3)
-        g = Generator(conf)
+        s=s.permute(1,0,4,2,3).to(device)
+        
+        g = Generator(conf).to(device)
         #g = Generator(num_frames=num_frames,num_extr_blocks=1,num_ch_in=3,num_features=16)
         y=g(s)
         if conf['DEFAULT'].getboolean("debugging"):
