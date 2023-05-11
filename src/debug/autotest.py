@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from data.REDS_loader import getDataLoader  
-from model import generator
+from model.generator import Generator
 import torch
 import cv2
 import albumentations as A
@@ -35,11 +35,11 @@ def autotest(conf):
         s=torch.stack(sample["x"],dim=0)  #need normalization because of the too large size->program crashes
         s=s.to(torch.float32)
         s=s.permute(1,0,4,2,3)
-        print(s.shape)
-        num_frames=2*conf["DEFAULT"].getint("n_neighbors")+1
-        g= generator.Generator(num_frames=num_frames,num_extr_blocks=1,num_ch_in=3,num_features=16)
+        g = Generator(conf)
+        #g = Generator(num_frames=num_frames,num_extr_blocks=1,num_ch_in=3,num_features=16)
         y=g(s)
-        print(y.shape)
+        if conf['DEFAULT'].getboolean("debugging"):
+            print(f"generator output shape = {y.shape}")
         print("[TEST] Generator flow... "+OK)
         passed+=1
     except Exception as e:

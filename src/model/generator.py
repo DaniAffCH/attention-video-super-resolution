@@ -5,22 +5,8 @@ import torch
 from sr_utils.sr_utils import bilinear_upsample
 from torchvision import ops
 from torch.nn.modules.utils import _pair
-class Feature_Extraction(nn.Module):            #we need residual for the vanishing of the gradient or can be replaced by pre-trained VGG
-    """
-    (d,num_features,h,w)---->(d,num_features,h,w)
-    """
-
-    def __init__(self, num_feat):
-        super().__init__()
-        self.conv1 = nn.Conv2d(num_feat, num_feat, 3, 1, 1) 
-        self.conv2 = nn.Conv2d(num_feat, num_feat, 3, 1, 1)
-        self.relu = nn.ReLU(inplace=True)
-
-
-    def forward(self, x):
-        id=x
-        x=self.conv2(self.relu(self.conv1(x)))
-        return x+id
+from model.common_layers import ConvBlockBase
+import time
     
 class DeformConvBlock(nn.Module):
     def __init__(self,in_channels,out_channels,kernel_size):
@@ -70,6 +56,7 @@ class Alignment(nn.Module):
                 offset=self.second_conv[level-1](offset)
             else: 
                 offset=self.second_conv[level-1](torch.cat([offset,upsampled_off],dim=1))
+            
             #deformable convolution DConv(F t+i, ∆P lt+i ) 
             aligned_feat=self.deform_conv[level-1](neighb_feature_list[level-1],offset)
 
@@ -126,32 +113,33 @@ class AttentionModule(nn.Module):
         
 
 class Generator(nn.Module):
-    def __init__(self,num_frames,num_extr_blocks,num_ch_in,num_features):
+    def __init__(self,conf):
         super().__init__()
-        self.num_ch_in=num_ch_in
-        self.num_frames=num_frames
-        self.num_features=num_features
-        self.num_extr_blocks=num_extr_blocks
-        self.center_frame_index = num_frames // 2
+        self.conf = conf
+        self.num_ch_in=3
+        self.num_frames=2*conf["DEFAULT"].getint("n_neighbors")+1
+        self.num_features=conf["GENERATOR"].getint("num_features")
+        self.num_extr_blocks=conf["GENERATOR"].getint("convolutional_stages")
+        self.center_frame_index = self.num_frames // 2
 
         #blocks
-        self.first_conv=nn.Conv2d(num_ch_in, num_features, 3, 1, 1)    
+        self.first_conv=nn.Conv2d(self.num_ch_in, self.num_features, 3, 1, 1)    
         self.lrelu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
 
         self.feat_ex = nn.ModuleList([])
-        for i in range(num_extr_blocks):
-            self.feat_ex.append(Feature_Extraction(num_features))
+        for _ in range(self.num_extr_blocks):
+            self.feat_ex.append(ConvBlockBase(self.num_features))
         
         #prepare the features for the pyramid
-        self.l1_to_l2=nn.Conv2d(num_features, num_features, 3, 2, 1) #stride 2 to half the dimensions
-        self.l2_to_l2=nn.Conv2d(num_features, num_features, 3, 1, 1) 
-        self.l2_to_l3=nn.Conv2d(num_features, num_features, 3, 2, 1) 
-        self.l3_to_l3=nn.Conv2d(num_features, num_features, 3, 1, 1) 
+        self.l1_to_l2=nn.Conv2d(self.num_features, self.num_features, 3, 2, 1) #stride 2 to half the dimensions
+        self.l2_to_l2=nn.Conv2d(self.num_features, self.num_features, 3, 1, 1) 
+        self.l2_to_l3=nn.Conv2d(self.num_features, self.num_features, 3, 2, 1) 
+        self.l3_to_l3=nn.Conv2d(self.num_features, self.num_features, 3, 1, 1) 
 
-        self.align=Alignment(num_features)
-        self.attn=AttentionModule(num_features,self.center_frame_index,num_frames)
+        self.align=Alignment(self.num_features)
+        self.attn=AttentionModule(self.num_features,self.center_frame_index,self.num_frames)
 
-        self.restore=nn.Conv2d(num_features,3,1,1,0)
+        self.restore=nn.Conv2d(self.num_features,3,1,1,0)
 
 
     def forward(self,x):
@@ -161,13 +149,24 @@ class Generator(nn.Module):
         t = number of neighbors (including itself)
 
         """
+        st = et = 0
         b, t, c, h, w = x.size()
         z=x.contiguous().view(-1,c,h,w) #to do the 2d convolution 
         #L1 first layer of the pyramid
         #(d,3,h,w)---->(d,num_features,h,w)
+
+        if self.conf['DEFAULT'].getboolean("time_debugging"):
+            st = time.time()
+
         l1=self.lrelu(self.first_conv(z))
-        for l,fe in enumerate(self.feat_ex):
+        for fe in self.feat_ex:
             l1=fe(l1)
+
+        if self.conf['DEFAULT'].getboolean("time_debugging"):
+            et = time.time()
+            print(f"[TIME] feature extractor: {et-st} s")
+            st = time.time()
+
         #L2
         l2=self.lrelu(self.l1_to_l2(l1))
         l2=self.lrelu(self.l2_to_l2(l2))
@@ -194,13 +193,29 @@ class Generator(nn.Module):
                 l2[:, i, :, :, :].clone(),
                 l3[:, i, :, :, :].clone()
             ]
-            aligned_feature=self.align(central_frame_feature_list,neighb_feature_list)
+            aligned_feature=self.align(central_frame_feature_list,neighb_feature_list) # bottneck
             aligned_feature_list.append(aligned_feature)
         aligned_tensor=torch.stack(aligned_feature_list,dim=1) #now this are the tokens for the attention layer
+
+        if self.conf['DEFAULT'].getboolean("time_debugging"):
+            et = time.time()
+            print(f"[TIME] feature alignment: {et-st} s")
+            st = time.time()
 
         #fusion of the features using cross temporal and spatial attention information
         fused_feature=self.attn(aligned_tensor)
 
+        if self.conf['DEFAULT'].getboolean("time_debugging"):
+            et = time.time()
+            print(f"[TIME] attention: {et-st} s")
+            st = time.time()
+
         #reconstruction phase
         hq_image=self.restore(fused_feature)
+
+        if self.conf['DEFAULT'].getboolean("time_debugging"):
+            et = time.time()
+            st = time.time()
+            print(f"[TIME] image restoring: {et-st} s")
+
         return hq_image
