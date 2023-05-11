@@ -211,11 +211,14 @@ class Generator(nn.Module):
             st = time.time()
 
         #reconstruction phase
-        hq_image=self.restore(fused_feature)
+
+        residual=self.restore(fused_feature) #this has to be pixel-shuffled in order to get bigger
+        upsampled_x=x[:,self.center_frame_index,:,:,:] #this has to be bilinear upsampled
+        image_hq=upsampled_x+residual
 
         if self.conf['DEFAULT'].getboolean("time_debugging"):
             et = time.time()
             st = time.time()
             print(f"[TIME] image restoring: {et-st} s")
 
-        return hq_image
+        return image_hq
