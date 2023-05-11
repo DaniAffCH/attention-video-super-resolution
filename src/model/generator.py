@@ -18,8 +18,9 @@ class Feature_Extraction(nn.Module):            #we need residual for the vanish
 
 
     def forward(self, x):
+        id=x
         x=self.conv2(self.relu(self.conv1(x)))
-        return x
+        return x+id
     
 class DeformConvBlock(nn.Module):
     def __init__(self,in_channels,out_channels,kernel_size):
@@ -85,28 +86,53 @@ class Alignment(nn.Module):
         aligned_feat=self.final_deform_conv(aligned_feat,final_offset)
         return aligned_feat
 
-
 class AttentionModule(nn.Module):
    
-    def __init__(self,num_features,center_frame_index):
+    def __init__(self,num_features,center_frame_index,num_frames):
         super().__init__()
         self.center_frame_index=center_frame_index
-        self.embeddings1=nn.Conv2d(num_features, num_features, 3, 1, 1)
-        self.embeddings2=nn.Conv2d(num_features, num_features, 3, 1, 1)
+        self.query=nn.Conv2d(num_features, num_features, 3, 1, 1)
+        self.keys=nn.Conv2d(num_features, num_features, 3, 1, 1)
+        self.sigmoid=nn.Sigmoid()
+        self.fusion=nn.Conv2d(num_features*num_frames,num_features,1,1,0)
+        self.spatial_attention=nn.Conv2d(num_features*num_frames,num_features,1,1,0)
 
 
     def forward(self,aligned_feat):
-        return aligned_feat
+        b, t, c, h, w = aligned_feat.size()
+        #temporal correlation(attention) for each couple of neighbors. Multihead attention would be more complex but useless(not so much temporal distance)
+        query=self.query(aligned_feat[:,self.center_frame_index,:,:,:].clone())
+        keys=self.query(aligned_feat.view(-1,c,h,w))
+        keys=keys.view(b,t,-1,h,w)
+
+        correlation=[]
+        for i in range(t):
+            key=keys[:,i,:,:,:]
+            corr=key*query         #cross product attention
+            #print("corr shape: ",corr.shape)
+            correlation.append(corr) #re-add the temporal dimension to do the fusion after this
+        correlation=torch.cat(correlation,dim=1)
+        correlation=self.sigmoid(correlation)      #temporal attention map 
+        #print(correlation.shape)
+        aligned_feat=aligned_feat.view(b,t*c,h,w)*correlation   #pixel wise mult to the original features
+        #fusion
+        fused_feature=self.fusion(aligned_feat)
+
+        #spatial attention
+        sp_attn=self.spatial_attention(aligned_feat)
+        sp_attn=self.sigmoid(sp_attn)             #mask
+        important_features=fused_feature*sp_attn
+        return important_features
         
 
 class Generator(nn.Module):
-    def __init__(self,num_frame,num_extr_blocks,num_ch_in,num_features):
+    def __init__(self,num_frames,num_extr_blocks,num_ch_in,num_features):
         super().__init__()
         self.num_ch_in=num_ch_in
-        self.num_frame=num_frame
+        self.num_frames=num_frames
         self.num_features=num_features
         self.num_extr_blocks=num_extr_blocks
-        self.center_frame_index = num_frame // 2
+        self.center_frame_index = num_frames // 2
 
         #blocks
         self.first_conv=nn.Conv2d(num_ch_in, num_features, 3, 1, 1)    
@@ -123,7 +149,9 @@ class Generator(nn.Module):
         self.l3_to_l3=nn.Conv2d(num_features, num_features, 3, 1, 1) 
 
         self.align=Alignment(num_features)
-        self.attn=AttentionModule(num_features)
+        self.attn=AttentionModule(num_features,self.center_frame_index,num_frames)
+
+        self.restore=nn.Conv2d(num_features,3,1,1,0)
 
 
     def forward(self,x):
@@ -174,7 +202,5 @@ class Generator(nn.Module):
         fused_feature=self.attn(aligned_tensor)
 
         #reconstruction phase
-
-
-
-        return fused_feature
+        hq_image=self.restore(fused_feature)
+        return hq_image
