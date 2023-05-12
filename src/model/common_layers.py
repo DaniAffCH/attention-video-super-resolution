@@ -26,6 +26,13 @@ class ConvBlockBase(nn.Module):
         tmp = self.conv2(tmp)
         tmp = nn.functional.leaky_relu(self.bn2(tmp))
         return tmp + x if self.res else tmp
+
+class VGGBlock(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self,x):
+        pass
     
 class DeformConvBlock(nn.Module):
     def __init__(self,in_channels,out_channels,kernel_size):

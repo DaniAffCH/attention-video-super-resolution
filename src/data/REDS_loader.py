@@ -51,7 +51,8 @@ def getDataLoader(conf):
         A.ToFloat(max_value=255, always_apply=True, p=1.0),
         A.Rotate(limit = 60, p=0.3),
         A.HorizontalFlip(p=0.5),
-        A.RandomBrightnessContrast(p=0.2)
+        A.RandomBrightnessContrast(p=0.2),
+        A.RandomCrop(conf['DEFAULT'].getint("image_height"), conf['DEFAULT'].getint("image_width"))
     ], additional_targets = targetdict)
 
     rl = REDS_loader(conf, transform)

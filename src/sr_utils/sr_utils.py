@@ -18,12 +18,10 @@ def bilinear_upsample(input, scale_factor):
     yy, xx = torch.meshgrid(y, x, indexing="ij")
     grid = torch.stack((yy, xx), dim=2).unsqueeze(0).repeat(B, 1, 1, 1).to(input.device)
     
-    # Normalizza le coordinate per il tensore originale
     grid = grid * torch.tensor([H-1, W-1], dtype=torch.float32).to(input.device)
     grid = grid / torch.tensor([H_up-1, W_up-1], dtype=torch.float32).to(input.device)
     grid = grid * 2 - 1
     
-    # Applica l'interpolazione bilineare
     output = torch.nn.functional.grid_sample(input, grid, align_corners=True)
     
     return output

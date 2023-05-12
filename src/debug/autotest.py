@@ -25,6 +25,7 @@ def autotest(conf):
             cv2.waitKey()
             cv2.imshow("SHARP_"+sample["referencePath"][0], sample["y"][0].numpy())
             cv2.waitKey()
+            cv2.destroyAllWindows()
 
         print("[TEST] Dataset loading... "+OK)
         passed+=1
