@@ -4,12 +4,17 @@ import argparse
 import configparser
 
 from debug.autotest import autotest
+from train.trainer import train
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train keypoints network')
 
     parser.add_argument('--debug',
                         help='executes automated tests to check if everything is working',
+                        action='store_true')
+    
+    parser.add_argument('--train',
+                        help='trains the network',
                         action='store_true')
 
     args = parser.parse_args()
@@ -27,6 +32,9 @@ def main():
 
     if(args.debug):
         autotest(config)
+    
+    if(args.train):
+        train(config)
     
 if __name__ == '__main__':
     main()

@@ -80,7 +80,7 @@ class Alignment(nn.Module):
         self.feat_conv=nn.ModuleList([])
         self.final_conv_offset=nn.Conv2d(2*num_features, num_features, 3, 1, 1)
         self.final_deform_conv=DeformConvBlock(num_features,num_features,kernel_size=3)
-        for i in range(num_level): #each level has is weights
+        for i in range(num_level): #each level has its weights
             self.first_conv.append(nn.Conv2d(2*num_features, num_features, 3, 1, 1))
             if(i==2):
                 self.second_conv.append(nn.Conv2d(num_features, num_features, 3, 1, 1))
