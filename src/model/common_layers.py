@@ -6,6 +6,20 @@ from sr_utils.sr_utils import bilinear_upsample
 
 import torch
 
+class ConvNorm(nn.Sequential):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, activation=True):
+        if(activation):
+            super(ConvNorm, self).__init__(
+                nn.Conv2d(in_channels, out_channels, kernel_size, stride, kernel_size//2, bias=False),
+                nn.BatchNorm2d(out_channels),
+                nn.ReLU6(inplace=True)
+            )
+        else:
+            super(ConvNorm, self).__init__(
+                nn.Conv2d(in_channels, out_channels, kernel_size, stride, kernel_size//2, bias=False),
+                nn.BatchNorm2d(out_channels),
+            )
+
 class ConvBlockBase(nn.Module):
     """
     (d,num_features,h,w)---->(d,num_features,h,w)
@@ -13,26 +27,32 @@ class ConvBlockBase(nn.Module):
 
     def __init__(self, num_feat, useResidual = True):
         super().__init__()
-        self.conv1 = nn.Conv2d(num_feat, num_feat, 3, 1, 1) 
-        self.conv2 = nn.Conv2d(num_feat, num_feat, 3, 1, 1)
-        self.bn1 = nn.BatchNorm2d(num_feat)
-        self.bn2 = nn.BatchNorm2d(num_feat)
+        self.s = nn.Sequential(
+            ConvNorm(num_feat, num_feat, 3),
+            ConvNorm(num_feat, num_feat, 3)
+        )
         self.res = useResidual
 
 
     def forward(self, x):
-        tmp = self.conv1(x)
-        tmp = nn.functional.leaky_relu(self.bn1(tmp))
-        tmp = self.conv2(tmp)
-        tmp = nn.functional.leaky_relu(self.bn2(tmp))
+        tmp = self.s(x)
         return tmp + x if self.res else tmp
 
 class VGGBlock(nn.Module):
-    def __init__(self):
+    def __init__(self, in_channels, out_channels, stride, useResidual=True):
         super().__init__()
+        self.middle_channels = in_channels + (out_channels-in_channels)//2
+        self.res = useResidual and in_channels == out_channels and stride == 1
+
+        self.s = nn.Sequential(
+            ConvNorm(in_channels, self.middle_channels, 3),
+            ConvNorm(self.middle_channels, self.middle_channels, 3, stride),
+            ConvNorm(self.middle_channels, out_channels, 3)
+        )
 
     def forward(self,x):
-        pass
+        tmp = self.s(x)
+        return tmp + x if self.res else tmp
     
 class DeformConvBlock(nn.Module):
     def __init__(self,in_channels,out_channels,kernel_size):

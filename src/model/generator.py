@@ -56,7 +56,7 @@ class Generator(nn.Module):
 
         if self.conf['DEFAULT'].getboolean("time_debugging"):
             et = time.time()
-            print(f"[TIME] feature extractor: {et-st} s")
+            print(f"[TIME] Generator feature extractor: {et-st} s")
             st = time.time()
 
         #L2
@@ -91,7 +91,7 @@ class Generator(nn.Module):
 
         if self.conf['DEFAULT'].getboolean("time_debugging"):
             et = time.time()
-            print(f"[TIME] feature alignment: {et-st} s")
+            print(f"[TIME] Generator feature alignment: {et-st} s")
             st = time.time()
 
         #fusion of the features using cross temporal and spatial attention information
@@ -99,7 +99,7 @@ class Generator(nn.Module):
 
         if self.conf['DEFAULT'].getboolean("time_debugging"):
             et = time.time()
-            print(f"[TIME] attention: {et-st} s")
+            print(f"[TIME] Generator attention: {et-st} s")
             st = time.time()
 
         #reconstruction phase
@@ -110,7 +110,7 @@ class Generator(nn.Module):
 
         if self.conf['DEFAULT'].getboolean("time_debugging"):
             et = time.time()
-            print(f"[TIME] image restoring: {et-st} s")
+            print(f"[TIME] Generator image restoring: {et-st} s")
             st = time.time()
 
 

@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from data.REDS_loader import getDataLoader  
 from model.generator import Generator
+from model.discriminator import Discriminator
 import torch
 import cv2
 import albumentations as A
@@ -40,7 +41,6 @@ def autotest(conf):
         s=s.permute(1,0,4,2,3).to(device)
         
         g = Generator(conf).to(device)
-        #g = Generator(num_frames=num_frames,num_extr_blocks=1,num_ch_in=3,num_features=16)
         y=g(s)
         if conf['DEFAULT'].getboolean("debugging"):
             print(f"generator output shape = {y.shape}")
@@ -51,5 +51,19 @@ def autotest(conf):
         print(e)
 
     tot+=1 
+
+    try:
+        s=sample["x"][len(sample["x"])//2]
+        s = s.permute(0,3,1,2).to(device)
+        d = Discriminator(conf).to(device)
+        y = d(s)
+        print("[TEST] Discriminator flow... "+OK)
+        passed+=1
+    except Exception as e:
+        print("[TEST] Discriminator flow... "+NO)
+        print(e)
+
+    tot+=1 
+
 
     print(f"[TEST] {passed}/{tot} tests passed")
