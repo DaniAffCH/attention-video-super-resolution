@@ -17,7 +17,7 @@ def autotest(conf):
     print(f"Using {device}")
 
     try:
-        data_loader = getDataLoader(conf)
+        data_loader = getDataLoader(conf, "train")
         sample = next(iter(data_loader))
 
         # "x" is images/referencePath  x  element in the list of neighbors x batch element

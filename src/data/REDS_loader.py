@@ -14,9 +14,9 @@ import torch
         - referencePath contains the description of the target processed i.e. the video it belongs to and the frame number  
 """
 class REDS_loader(Dataset):
-    def __init__(self, conf, transform):
-        self.sharpdir =  os.path.join(conf["DATASET"]["root"], "train_sharp/train/train_sharp")
-        self.blurdir = os.path.join(conf["DATASET"]["root"], "train_blur/train/train_blur")
+    def __init__(self, conf, transform, split):
+        self.sharpdir =  os.path.join(conf["DATASET"]["root"], f"{split}_sharp/{split}/{split}_sharp")
+        self.blurdir = os.path.join(conf["DATASET"]["root"], f"{split}_blur/{split}/{split}_blur")
         self.transform = transform
 
         maxsharp = max([int(i) for i in os.listdir(self.sharpdir)])
@@ -44,7 +44,11 @@ class REDS_loader(Dataset):
 
         return {"x":neighbors_images_blur, "y":target_sharp, "referencePath": f"{video}/{frame}.png"}
 
-def getDataLoader(conf):
+def getDataLoader(conf, split):
+
+    if split not in ["train", "val"]:
+        raise Exception(f"Expected a dataset split train or val, given {split}")
+
     targetdict = {f"image{k}":"image" for k in range(conf["DEFAULT"].getint("n_neighbors") * 2 + 1)}
 
     transform = A.Compose([
@@ -55,7 +59,7 @@ def getDataLoader(conf):
         A.RandomCrop(conf['DEFAULT'].getint("image_height"), conf['DEFAULT'].getint("image_width"))
     ], additional_targets = targetdict)
 
-    rl = REDS_loader(conf, transform)
+    rl = REDS_loader(conf, transform, split)
 
     data_loader = torch.utils.data.DataLoader(
         rl,
