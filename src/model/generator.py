@@ -31,6 +31,8 @@ class Generator(nn.Module):
         self.align=Alignment(self.num_features)
         self.attn=AttentionModule(self.num_features,self.center_frame_index,self.num_frames)
 
+        self.finalconv = ConvBlockBase(self.num_features)
+
         self.restore=nn.Conv2d(self.num_features,3,1,1,0)
 
 
@@ -103,9 +105,9 @@ class Generator(nn.Module):
             st = time.time()
 
         #reconstruction phase
-
+        fused_feature = self.finalconv(fused_feature)
         residual=self.restore(fused_feature) #this has to be pixel-shuffled in order to get bigger
-        upsampled_x=x[:,self.center_frame_index,:,:,:] #this has to be bilinear upsampled
+        upsampled_x=x[:,self.center_frame_index,:,:,:]
         image_hq=upsampled_x+residual
 
         if self.conf['DEFAULT'].getboolean("time_debugging"):

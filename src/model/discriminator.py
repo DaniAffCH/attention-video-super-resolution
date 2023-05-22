@@ -39,7 +39,7 @@ class Discriminator(nn.Module):
 
         x = x.reshape(x.size(0), -1)
         x = nn.functional.leaky_relu(self.fc1(x))
-        x = nn.functional.leaky_relu(self.fc2(x))
+        x = self.fc2(x)
 
         if self.conf['DEFAULT'].getboolean("time_debugging"):
             et = time.time()
