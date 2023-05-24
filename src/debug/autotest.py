@@ -45,6 +45,10 @@ def autotest(conf):
         
         g = Generator(conf).to(device)
         y=g(s)
+        y=y.cpu()
+        #print(y)
+        cv2.imshow("gen-test",y[0].permute(1,2,0).detach().numpy())
+        cv2.waitKey()
         if conf['DEFAULT'].getboolean("debugging"):
             print(f"generator output shape = {y.shape}")
         print("[TEST] Generator flow... "+OK)

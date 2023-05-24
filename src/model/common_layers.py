@@ -59,13 +59,16 @@ class DeformConvBlock(nn.Module):
         super().__init__()
         self.kernel_size=_pair(kernel_size)
         self.groups=self.kernel_size[0]*self.kernel_size[1]
-        self.weight = nn.Parameter(torch.Tensor(out_channels, in_channels // self.groups, *self.kernel_size))
+        self.weight = nn.Parameter(torch.randn(out_channels, in_channels // self.groups, *self.kernel_size)) #to not explode the computation
 
         self.conv_for_offset=nn.Conv2d(in_channels,2*self.kernel_size[0]*self.kernel_size[1], 3, 1, 1) 
+        self.conv_for_mask=nn.Conv2d(in_channels,self.kernel_size[0]*self.kernel_size[1], 3, 1, 1)
+
 
     def forward(self,input,offset):
         offset=self.conv_for_offset(offset)
-        out=ops.deform_conv2d(input,offset,self.weight,None,stride=1,padding=1,dilation=1)
+        mask=self.conv_for_mask(input)
+        out=ops.deform_conv2d(input=input,offset=offset,weight=self.weight,stride=(1,1),padding=(1,1),dilation=(1,1),mask=mask)
         return out
     
 
@@ -76,6 +79,7 @@ class Alignment(nn.Module):
         self.first_conv=nn.ModuleList([])
         self.second_conv=nn.ModuleList([])
         self.lrelu=nn.LeakyReLU()
+        self.upsample=torch.nn.Upsample(size=None, scale_factor=2, mode='bilinear', align_corners=None, recompute_scale_factor=None)
         self.deform_conv=nn.ModuleList([])
         self.feat_conv=nn.ModuleList([])
         self.final_conv_offset=nn.Conv2d(2*num_features, num_features, 3, 1, 1)
@@ -100,24 +104,26 @@ class Alignment(nn.Module):
             offset=torch.cat([central_frame_feature_list[level-1],neighb_feature_list[level-1]],dim=1) #now we have 2*num_features channels
             offset=self.lrelu(self.first_conv[level-1](offset)) #learn the offset, it says were the kernel must be applied for the convolution, as if the feature were aligned (the kernels goes to the same part of the object)
             if level==3:
-                offset=self.second_conv[level-1](offset)
+                offset=self.lrelu(self.second_conv[level-1](offset))
             else: 
-                offset=self.second_conv[level-1](torch.cat([offset,upsampled_off],dim=1))
-            
+                offset=self.lrelu(self.second_conv[level-1](torch.cat([offset,upsampled_off],dim=1)))
+                
             #deformable convolution DConv(F t+i, ∆P lt+i ) 
             aligned_feat=self.deform_conv[level-1](neighb_feature_list[level-1],offset)
 
             if (level<3):
                 aligned_feat=self.feat_conv[level-1](torch.cat([aligned_feat,upsampled_feat],dim=1))
+            if(level>1):
+                aligned_feat=self.lrelu(aligned_feat)
 
             if(level>1):
-                upsampled_off=bilinear_upsample(offset,2)
-                upsampled_feat=bilinear_upsample(aligned_feat,2)
+                upsampled_off=self.upsample(offset)*2
+                upsampled_feat=self.upsample(aligned_feat)
             level-=1
         #last cascading
         final_offset=torch.cat([aligned_feat,central_frame_feature_list[0]],dim=1)
-        final_offset=self.final_conv_offset(final_offset)
-        aligned_feat=self.final_deform_conv(aligned_feat,final_offset)
+        final_offset=self.lrelu(self.final_conv_offset(final_offset))
+        aligned_feat=self.lrelu(self.final_deform_conv(aligned_feat,final_offset))
         return aligned_feat
 
 class AttentionModule(nn.Module):
