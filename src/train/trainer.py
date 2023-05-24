@@ -3,7 +3,7 @@ import torch
 from data.REDS_loader import getDataLoader
 from model.generator import Generator
 from train.earlyStop import EarlyStopping
-from train.train_one import trainOne_generator
+from train.train_one import trainOne
 from train.validate import validate
 from train.loss import Loss
 def train(conf):
@@ -19,13 +19,13 @@ def train(conf):
 
     genEr = EarlyStopping(gen, conf["TRAINING"].getfloat("generator_es_minIncrement"), conf["TRAINING"].getint("generator_es_epochsNoImprovement"), conf["TRAINING"]["name_model"])
 
-    Loss = Loss()
+    lossfac = Loss()
 
     losses=[]
 
     for i in range(conf["TRAINING"].getint("max_epochs")):
 
-        loss=trainOne_generator(gen, dlTrain, optimizerGen, device, Loss)
+        loss=trainOne(gen, dlTrain, optimizerGen, device, lossfac)
 
         validate()
 

@@ -3,7 +3,10 @@ from data.REDS_loader import getDataLoader
 from model.generator import Generator
 import torch
 import cv2
-import albumentations as A
+from train.earlyStop import EarlyStopping
+from train.loss import Loss
+from train.train_one import trainOne
+
 
 OK = "\033[92m[PASSED]\033[0m"
 NO = "\033[91m[FAILED]\033[0m"
@@ -15,6 +18,7 @@ def autotest(conf):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Using {device}")
 
+    data_loader = None
     try:
         data_loader = getDataLoader(conf, "train")
         sample = next(iter(data_loader))
@@ -34,7 +38,7 @@ def autotest(conf):
         print(e)
 
     tot+=1
-
+    g = None
     try:
         s=torch.stack(sample["x"],dim=0)  #need normalization because of the too large size->program crashes
         s=s.permute(1,0,4,2,3).to(device)
@@ -45,11 +49,25 @@ def autotest(conf):
             print(f"generator output shape = {y.shape}")
         print("[TEST] Generator flow... "+OK)
         passed+=1
+        del y
     except Exception as e:
         print("[TEST] Generator flow... "+NO)
         print(e)
 
     tot+=1 
+
+    try:
+        optimizerGen = torch.optim.Adam(g.parameters(),lr=conf["TRAINING"].getfloat("generator_learning_rate"))
+        lossfac = Loss()
+        trainOne(g, data_loader, optimizerGen, device, lossfac,True)
+
+        print("[TEST] Training step... "+OK)
+        passed+=1
+    except Exception as e: 
+        print("[TEST] Training step... "+NO)
+        print(e)
+
+    tot+=1
 
 
 
