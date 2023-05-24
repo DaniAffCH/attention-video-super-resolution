@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import tqdm
 import torch
 
-def trainOne_generator(generator, discriminator, dataloader, optimizer, device, loss):
+def trainOne_generator(generator, dataloader, optimizer, device, loss):
     generator.train()
     for batch in tqdm.tqdm(dataloader):
         optimizer.zero_grad()
@@ -13,10 +13,7 @@ def trainOne_generator(generator, discriminator, dataloader, optimizer, device, 
 
         Ohat = generator(x)
 
-        discHat = discriminator(Ohat)
-        discTrue = torch.zeros(batch.shape[0])
-
-        l = loss(Ohat, batch["y"], discTrue, discHat)
+        l = loss(Ohat, batch["y"])
 
         l.backward()
 
@@ -24,5 +21,5 @@ def trainOne_generator(generator, discriminator, dataloader, optimizer, device, 
 
         # ritorna le loss varie 
 
-def trainOne_discriminator():
-    pass
+        return l
+
