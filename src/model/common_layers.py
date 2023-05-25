@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from torch import nn
 from torch.nn.modules.utils import _pair
 from torchvision import ops
-from sr_utils.sr_utils import bilinear_upsample
 
 import torch
 

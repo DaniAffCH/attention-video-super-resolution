@@ -63,7 +63,7 @@ def autotest(conf):
     try:
         optimizerGen = torch.optim.Adam(g.parameters(),lr=conf["TRAINING"].getfloat("generator_learning_rate"))
         lossfac = Loss()
-        trainOne(g, data_loader, optimizerGen, device, lossfac,True)
+        trainOne(g, data_loader, optimizerGen, device, lossfac, conf, True)
 
         print("[TEST] Training step... "+OK)
         passed+=1

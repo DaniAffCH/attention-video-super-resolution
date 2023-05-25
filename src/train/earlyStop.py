@@ -9,6 +9,10 @@ class EarlyStopping():
         self.savePath = os.path.join("trained_models", savePath)
         self.model = model
         self.best = torch.inf
+
+    def getNoImprovement(self):
+        return self.count
+
     def __call__(self, loss):
         if loss < self.best - self.eps:
             torch.save(self.model.state_dict(), self.savePath)

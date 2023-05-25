@@ -1,27 +1,10 @@
 from __future__ import absolute_import
 import torch
 
-def bilinear_upsample(input, scale_factor):
-    # Input:
-    # B x C x H x W
-    # Output:
-    # B x C x H_up x W_up
-    
-    B, C, H, W = input.shape
+def sanitizeInput(input, device):
+    x = torch.stack(input,dim=0)
+    return x.permute(1,0,4,2,3).to(device) 
 
-    H_up = H * scale_factor
-    W_up = W * scale_factor
+def sanitizeGT(gt, device):
+    return gt.permute(0,3,1,2).to(device)
     
-
-    y = torch.linspace(-1, 1, H_up)
-    x = torch.linspace(-1, 1, W_up)
-    yy, xx = torch.meshgrid(y, x, indexing="ij")
-    grid = torch.stack((yy, xx), dim=2).unsqueeze(0).repeat(B, 1, 1, 1).to(input.device)
-    
-    grid = grid * torch.tensor([H-1, W-1], dtype=torch.float32).to(input.device)
-    grid = grid / torch.tensor([H_up-1, W_up-1], dtype=torch.float32).to(input.device)
-    grid = grid * 2 - 1
-    
-    output = torch.nn.functional.grid_sample(input, grid, align_corners=True)
-    
-    return output

@@ -2,21 +2,24 @@ from __future__ import absolute_import
 
 import tqdm
 import torch
+from sr_utils.sr_utils import sanitizeInput, sanitizeGT
 
-def trainOne(model, dataloader, optimizer, device, loss, isTest=False):
+def trainOne(model, dataloader, optimizer, device, loss, conf, isTest=False):
     model.train()
 
-    update = 100
+    update = conf["TRAINING"].getint("update_rate")
     losses = []
+    totLoss = 0
+    totUpdate = 0
 
     for n, batch in tqdm.tqdm(enumerate(dataloader)):
         optimizer.zero_grad()
 
-        x = torch.stack(batch["x"],dim=0)
-        x = x.permute(1,0,4,2,3).to(device)        
+        x = sanitizeInput(batch["x"], device)     
 
         Ohat = model(x)
-        O = batch["y"].permute(0,3,1,2).to(device)
+
+        O = sanitizeGT(batch["y"], device)
 
         l = loss(Ohat, O)
 
@@ -27,12 +30,15 @@ def trainOne(model, dataloader, optimizer, device, loss, isTest=False):
         optimizer.step()
 
         if(isTest):
-            return
+            return .0
 
-        if(n%100 == 0):
-            print(sum(losses)/len(losses))
-            losses = []
+        with torch.no_grad():
+            if(n%update == 0):
+                lavg = sum(losses)/len(losses)
+                totUpdate += 1
+                totLoss += lavg
+                print(f"[UPDATE] batch {n} avg loss {lavg}")
+                losses = []
 
-    # ritorna le loss varie 
-    return l
+    return totLoss/totUpdate
 

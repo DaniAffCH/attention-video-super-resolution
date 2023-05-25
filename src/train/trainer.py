@@ -21,14 +21,16 @@ def train(conf):
 
     lossfac = Loss()
 
-    losses=[]
-
     for i in range(conf["TRAINING"].getint("max_epochs")):
 
-        loss=trainOne(gen, dlTrain, optimizerGen, device, lossfac)
+        avgtrain=trainOne(gen, dlTrain, optimizerGen, device, lossfac, conf)
 
-        validate()
+        avgval = validate(gen, dlVal, lossfac, device)
 
-        print("Epoch %f: loss=%f ",i,loss)
-        losses.append(loss)
-    return losses
+        stop = genEr(avgval)
+        print(f"[Epoch {i}]: avg training loss={avgtrain}       validation-loss={avgval}    No improvements since {genEr.getNoImprovement()} epoch(s)")
+
+        if(stop):
+            break
+    
+
