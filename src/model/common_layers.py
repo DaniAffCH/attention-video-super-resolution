@@ -57,7 +57,7 @@ class DeformConvBlock(nn.Module):
     def __init__(self,in_channels,out_channels,kernel_size):
         super().__init__()
         self.kernel_size=_pair(kernel_size)
-        self.groups=self.kernel_size[0]*self.kernel_size[1]
+        self.groups=self.kernel_size[0]*self.kernel_size[1]-1
         self.weight = nn.Parameter(torch.randn(out_channels, in_channels // self.groups, *self.kernel_size)) #to not explode the computation
 
         self.conv_for_offset=nn.Conv2d(in_channels,2*self.kernel_size[0]*self.kernel_size[1], 3, 1, 1) 
