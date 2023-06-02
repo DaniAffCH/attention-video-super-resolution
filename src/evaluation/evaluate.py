@@ -32,6 +32,6 @@ def evaluate(conf, path):
         del O
         del Ohat
 
-    avg_psnr = sum(psnr_list)/sum(psnr_list)
+    avg_psnr = sum(psnr_list)/len(psnr_list)
     print(f"Evaluation of {path} completed. PSNR score = {avg_psnr}")
 
