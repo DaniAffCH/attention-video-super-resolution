@@ -5,6 +5,8 @@ import configparser
 
 from debug.autotest import autotest
 from train.trainer import train
+from evaluation.evaluate import evaluate
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train keypoints network')
@@ -16,6 +18,9 @@ def parse_args():
     parser.add_argument('--train',
                         help='trains the network',
                         action='store_true')
+    
+    parser.add_argument('--evaluate',
+                        help='trains the network')
 
     args = parser.parse_args()
 
@@ -33,8 +38,11 @@ def main():
     if(args.debug):
         autotest(config)
     
-    if(args.train):
+    elif(args.train):
         train(config)
     
+    elif(args.evaluate):
+        evaluate(config, args.evaluate)
+
 if __name__ == '__main__':
     main()

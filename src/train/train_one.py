@@ -15,7 +15,7 @@ def trainOne(model, dataloader, optimizer, device, loss, conf, isTest=False):
     for n, batch in tqdm.tqdm(enumerate(dataloader)):
         optimizer.zero_grad()
 
-        x = sanitizeInput(batch["x"], device)     
+        x = sanitizeInput(batch["x"], device)
 
         Ohat = model(x)
 

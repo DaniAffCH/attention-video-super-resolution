@@ -29,7 +29,7 @@ def autotest(conf):
             cv2.waitKey()
             cv2.imshow("SHARP_"+sample["referencePath"][0], sample["y"][0].numpy())
             cv2.waitKey()
-            cv2.destroyAllWindows()
+            #cv2.destroyAllWindows()
 
         print("[TEST] Dataset loading... "+OK)
         passed+=1
@@ -44,9 +44,14 @@ def autotest(conf):
         s=s.permute(1,0,4,2,3).to(device)
         
         g = Generator(conf).to(device)
+        g.load_state_dict(torch.load("trained_models/second_test_400x300"))
         y=g(s)
         y=y.cpu()
+        residual = torch.abs(y[0].permute(1,2,0).detach() - sample["x"][len(sample["x"])//2][0])
+        residual = residual.numpy()
         #print(y)
+        cv2.imshow("gen-residual",residual)
+        cv2.waitKey()
         cv2.imshow("gen-test",y[0].permute(1,2,0).detach().numpy())
         cv2.waitKey()
         if conf['DEFAULT'].getboolean("debugging"):
