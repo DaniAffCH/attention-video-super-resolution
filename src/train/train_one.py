@@ -12,7 +12,9 @@ def trainOne(model, dataloader, optimizer, device, loss, conf, isTest=False):
     totLoss = 0
     totUpdate = 0
 
-    for n, batch in tqdm.tqdm(enumerate(dataloader)):
+    n = 0
+
+    for batch in tqdm.tqdm(dataloader):
         optimizer.zero_grad()
 
         x = sanitizeInput(batch["x"], device)
@@ -31,6 +33,8 @@ def trainOne(model, dataloader, optimizer, device, loss, conf, isTest=False):
 
         if(isTest):
             return .0
+        
+        n += 1
 
         with torch.no_grad():
             if(n%update == 0):

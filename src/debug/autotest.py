@@ -3,10 +3,9 @@ from data.REDS_loader import getDataLoader
 from model.generator import Generator
 import torch
 import cv2
-from train.earlyStop import EarlyStopping
 from train.loss import Loss
 from train.train_one import trainOne
-
+from evaluation.evaluate import evaluate
 
 OK = "\033[92m[PASSED]\033[0m"
 NO = "\033[91m[FAILED]\033[0m"
@@ -49,12 +48,12 @@ def autotest(conf):
         y=y.cpu()
         residual = torch.abs(y[0].permute(1,2,0).detach() - sample["x"][len(sample["x"])//2][0])
         residual = residual.numpy()
-        #print(y)
-        cv2.imshow("gen-residual",residual)
-        cv2.waitKey()
-        cv2.imshow("gen-test",y[0].permute(1,2,0).detach().numpy())
-        cv2.waitKey()
+
         if conf['DEFAULT'].getboolean("debugging"):
+            cv2.imshow("gen-residual",residual)
+            cv2.waitKey()
+            cv2.imshow("gen-test",y[0].permute(1,2,0).detach().numpy())
+            cv2.waitKey()
             print(f"generator output shape = {y.shape}")
         print("[TEST] Generator flow... "+OK)
         passed+=1
@@ -78,6 +77,15 @@ def autotest(conf):
 
     tot+=1
 
+    try:
+        evaluate(conf, "", True)
+        print("[TEST] Evaluation step... "+OK)
+        passed+=1
+    except Exception as e: 
+        print("[TEST] Evaluation step... "+NO)
+        print(e)
+
+    tot+=1
 
 
     print(f"[TEST] {passed}/{tot} tests passed")
