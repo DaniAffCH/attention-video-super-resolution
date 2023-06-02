@@ -3,11 +3,11 @@ from __future__ import absolute_import
 from torch import nn
 from kornia.color import rgb_to_ycbcr
 import torch
-import cv2
+import math
 
 def mse(O, Ohat):
     squaredErr = (O-Ohat)**2
-    return squaredErr.mean(2).mean(1).mean(0)
+    return squaredErr.mean(2).mean(1)
 
 def psnr(O, Ohat):
     O = rgb_to_ycbcr(O)
@@ -16,6 +16,9 @@ def psnr(O, Ohat):
     Ohat = Ohat[:,0,:,:]
 
     val,_ = torch.max(Ohat.flatten(1), 1) 
-    val = float(val)
 
-    return 10*torch.log10(val/mse(O, Ohat))
+    ratio = val/mse(O, Ohat)
+
+    ratio = float(ratio.mean(0))
+
+    return 10*math.log10(ratio)
