@@ -6,6 +6,7 @@ import cv2
 from train.loss import Loss
 from train.train_one import trainOne
 from evaluation.evaluate import evaluate
+from sr_utils.docker import is_docker
 
 OK = "\033[92m[PASSED]\033[0m"
 NO = "\033[91m[FAILED]\033[0m"
@@ -24,10 +25,11 @@ def autotest(conf):
 
         # "x" is images/referencePath  x  element in the list of neighbors x batch element
         if conf['DEFAULT'].getboolean("debugging"):
-            cv2.imshow("BLUR_"+sample["referencePath"][0], sample["x"][len(sample["x"])//2][0].numpy())
-            cv2.waitKey()
-            cv2.imshow("SHARP_"+sample["referencePath"][0], sample["y"][0].numpy())
-            cv2.waitKey()
+            if(not is_docker()):
+                cv2.imshow("BLUR_"+sample["referencePath"][0], sample["x"][len(sample["x"])//2][0].numpy())
+                cv2.waitKey()
+                cv2.imshow("SHARP_"+sample["referencePath"][0], sample["y"][0].numpy())
+                cv2.waitKey()
             #cv2.destroyAllWindows()
 
         print("[TEST] Dataset loading... "+OK)
@@ -50,10 +52,11 @@ def autotest(conf):
         residual = residual.numpy()
 
         if conf['DEFAULT'].getboolean("debugging"):
-            cv2.imshow("gen-residual",residual)
-            cv2.waitKey()
-            cv2.imshow("gen-test",y[0].permute(1,2,0).detach().numpy())
-            cv2.waitKey()
+            if(not is_docker()):
+                cv2.imshow("gen-residual",residual)
+                cv2.waitKey()
+                cv2.imshow("gen-test",y[0].permute(1,2,0).detach().numpy())
+                cv2.waitKey()
             print(f"generator output shape = {y.shape}")
         print("[TEST] Generator flow... "+OK)
         passed+=1

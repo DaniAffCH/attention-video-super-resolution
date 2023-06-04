@@ -37,7 +37,8 @@ def trainOne(model, dataloader, optimizer, device, loss, conf, isTest=False):
         n += 1
 
         with torch.no_grad():
-            if(n%update == 0):
+            if(n >= update):
+                n = 0
                 lavg = sum(losses)/len(losses)
                 totUpdate += 1
                 totLoss += lavg
