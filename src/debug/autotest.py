@@ -45,7 +45,7 @@ def autotest(conf):
         s=s.permute(1,0,4,2,3).to(device)
         
         g = Generator(conf).to(device)
-        g.load_state_dict(torch.load("trained_models/second_test_400x300"))
+        #g.load_state_dict(torch.load("trained_models/second_test_400x300"))
         y=g(s)
         y=y.cpu()
         residual = torch.abs(y[0].permute(1,2,0).detach() - sample["x"][len(sample["x"])//2][0])
