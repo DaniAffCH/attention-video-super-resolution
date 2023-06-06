@@ -15,6 +15,7 @@ class Generator(nn.Module):
         self.center_frame_index = self.num_frames // 2
 
         #blocks
+        #deconv it's like to learn the inverse of a blur convolution
         self.deblur=nn.ConvTranspose2d(self.num_ch_in, self.num_ch_in, 3, stride=1, padding=1, output_padding=0, groups=1, bias=True, dilation=1, padding_mode='zeros')
         self.first_conv=nn.Conv2d(self.num_ch_in, self.num_features, 3, 1, 1)    
         self.lrelu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
