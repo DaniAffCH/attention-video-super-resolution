@@ -15,6 +15,7 @@ class Generator(nn.Module):
         self.center_frame_index = self.num_frames // 2
 
         #blocks
+        self.deblur=nn.ConvTranspose2d(self.num_ch_in, self.num_ch_in, 3, stride=1, padding=1, output_padding=0, groups=1, bias=True, dilation=1, padding_mode='zeros')
         self.first_conv=nn.Conv2d(self.num_ch_in, self.num_features, 3, 1, 1)    
         self.lrelu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
 
@@ -48,7 +49,8 @@ class Generator(nn.Module):
         z=x.contiguous().view(-1,c,h,w) #to do the 2d convolution 
         #L1 first layer of the pyramid
         #(d,3,h,w)---->(d,num_features,h,w)
-
+        z=self.lrelu(self.deblur(z))
+        
         if self.conf['DEFAULT'].getboolean("time_debugging"):
             st = time.time()
 
