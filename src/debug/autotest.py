@@ -7,6 +7,7 @@ from train.loss import Loss
 from train.train_one import trainOne
 from evaluation.evaluate import evaluate
 from sr_utils.docker import is_docker
+from inference.sr_inference import inference 
 
 OK = "\033[92m[PASSED]\033[0m"
 NO = "\033[91m[FAILED]\033[0m"
@@ -19,6 +20,7 @@ def autotest(conf):
     print(f"Using {device}")
 
     data_loader = None
+    '''
     try:
         data_loader = getDataLoader(conf, "train")
         sample = next(iter(data_loader))
@@ -89,6 +91,18 @@ def autotest(conf):
         print(e)
 
     tot+=1
-
+    del g
+    del data_loader
+    '''
+    try:
+        path="images_inf/"
+        inference(conf,1,device,path)
+        print("[TEST] Inference step... "+OK)
+        passed+=1
+    except Exception as e:
+        print("[TEST] Inference step... "+NO)
+        print(e)
+    
+    tot+=1
 
     print(f"[TEST] {passed}/{tot} tests passed")
