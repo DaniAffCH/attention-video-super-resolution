@@ -12,7 +12,7 @@ import torchvision.transforms.functional
 
 def inference(conf,num_vid,device,path):
     model = Generator(conf).to(device)
-    model.load_state_dict(torch.load("trained_models/second_test_400x300"))
+    model.load_state_dict(torch.load("trained_models/"+conf['TRAINING'].get("name_model")))
 
     model.eval()
 
