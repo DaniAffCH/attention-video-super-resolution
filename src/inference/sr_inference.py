@@ -32,10 +32,10 @@ def inference(conf,num_vid,device,path):
         x=x.permute(1,0,2,3,4).to(device)
         print(x.shape)
         Ohat = model(x)
-        name = str(num_vid)+str(i)+'.png'
+        name = 'vid'+str(num_vid)+'_'+str(i)+'.png'
         print(name)
         filename=path+name
+        Ohat=Ohat.squeeze().permute(2,1,0)
         cv2.imwrite(filename, numpy.array(Ohat.to("cpu").detach().numpy()))
-        print("sweet home alabama")
         del Ohat
     return 
