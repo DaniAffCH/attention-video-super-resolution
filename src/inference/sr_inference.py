@@ -6,10 +6,12 @@ import os
 from data.REDS_loader import REDS_loader
 import albumentations as A
 from model.generator import Generator
+from data.REDS_loader import getDataLoader  
 import numpy
 import torchvision.transforms.functional
+import tqdm
 
-def inference(conf):
+def inference(conf, testing = False):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Using {device}")
     num_vid = conf["INFERENCE"].getint("video_number")
@@ -17,30 +19,35 @@ def inference(conf):
     model = Generator(conf).to(device)
     model.load_state_dict(torch.load("trained_models/"+conf['TRAINING'].get("name_model")))
 
+    data_loader = getDataLoader(conf, "train")
+
     if not os.path.exists(path):
         os.makedirs(path)
 
-    model.eval()
 
-    loader= REDS_loader(conf,A.Compose([]),"train")
+    for sample in tqdm.tqdm(data_loader):
+        s=torch.stack(sample["x"],dim=0)
+        s=s.permute(1,0,4,2,3).to(device)
+        
+        y=model(s)
+        y=y.cpu()
+        residual = torch.abs(y[0].permute(1,2,0).detach() - sample["x"][len(sample["x"])//2][0])
+        residual = residual.numpy()
 
-    for i in range(100):
-        img=loader. __getitem__(num_vid*100+i)["x"]
+        frame = sample["referencePath"][0].split("/")[-1].split(".")[-2]
+        video = sample["referencePath"][0].split("/")[-2]
 
-        for element,_ in enumerate(img):
-            img[element]=torch.Tensor(img[element])
-            img[element]=img[element].unsqueeze(1)
-            img[element]=img[element].permute(1,3,2,0)
-            img[element]=torchvision.transforms.functional.crop(img[element], 0, 0, conf['DEFAULT'].getint("image_height"), conf['DEFAULT'].getint("image_width")) 
-            
-        x = torch.stack(img,dim=0)
-        x=x.permute(1,0,2,3,4).to(device)
+        inf_name = f"vid{video}_{frame}_inf.png"
+        res_name = f"vid{video}_{frame}_res.png"
 
-        Ohat = model(x)
-        name = f'vid{num_vid}_{i}.png'
+        out = y[0].permute(1,2,0).detach().numpy() * 255
+        residual = residual * 255
 
-        filename=os.path.join(path,name)
-        Ohat=Ohat.squeeze().permute(2,1,0)
-        cv2.imwrite(filename, numpy.array(Ohat.to("cpu").detach().numpy()))
-        del Ohat
-    return 
+        cv2.imwrite(os.path.join(path, inf_name), out)
+        cv2.imwrite(os.path.join(path, res_name), residual)
+
+        del s 
+        del y
+
+        if(testing):
+            break
