@@ -20,7 +20,7 @@ def autotest(conf):
     print(f"Using {device}")
 
     data_loader = None
-    '''
+
     try:
         data_loader = getDataLoader(conf, "train")
         sample = next(iter(data_loader))
@@ -93,10 +93,10 @@ def autotest(conf):
     tot+=1
     del g
     del data_loader
-    '''
+
     try:
         path="images_inf/"
-        inference(conf,1,device,path)
+        inference(conf)
         print("[TEST] Inference step... "+OK)
         passed+=1
     except Exception as e:
