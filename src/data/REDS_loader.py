@@ -17,7 +17,7 @@ import numpy
 class REDS_loader(Dataset):
     def __init__(self, conf, transform, split):
         self.sharpdir =  os.path.join(conf["DATASET"]["root"], f"{split}_sharp/{split}/{split}_sharp")
-        self.blurdir = os.path.join(conf["DATASET"]["root"], f"{split}_blur/{split}/{split}_blur")
+        self.blurdir = os.path.join(conf["DATASET"]["root"], f"{split}/{split}_blur_bicubic/X4")
         self.transform = transform
 
         maxsharp = max([int(i) for i in os.listdir(self.sharpdir)])
@@ -57,7 +57,6 @@ def getDataLoader(conf, split):
         A.Rotate(limit = 60, p=0.3),
         A.HorizontalFlip(p=0.5),
         A.RandomBrightnessContrast(p=0.2),
-        A.RandomCrop(conf['DEFAULT'].getint("image_height"), conf['DEFAULT'].getint("image_width"))
     ], additional_targets = targetdict)
 
     rl = REDS_loader(conf, transform, split)
