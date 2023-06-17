@@ -35,7 +35,6 @@ def inference(conf, testing = False):
         upsampled = ups(upsampled).cpu()
     
         y=model(s)
-        y=y.cpu()
         print(y.shape)
         y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
         s[:,model.center_frame_index,:,:,:]=y
@@ -43,10 +42,11 @@ def inference(conf, testing = False):
         print(y.shape)
         for i in range(conf['INFERENCE'].getint("n_updates")):
             y=model(y)
-            y=y.cpu()
             y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
             s[:,model.center_frame_index,:,:,:]=y
-            y=s
+            if(i!=conf['INFERENCE'].getint("n_updates")-1):
+                y=s
+        y=y.cpu()
 
         
 
