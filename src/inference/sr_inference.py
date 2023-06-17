@@ -42,15 +42,18 @@ def inference(conf, testing = False):
         print(y.shape)
         for i in range(conf['INFERENCE'].getint("n_updates")):
             y=model(y)
+            print("a")
             y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
+            print("b")
             s[:,model.center_frame_index,:,:,:]=y
+            print("c")
             if(i!=conf['INFERENCE'].getint("n_updates")-1):
                 y=s
         y=y.cpu()
 
         
 
-        
+        print("OK!!!!")
 
         
         residual = torch.abs(y.detach() - upsampled)
