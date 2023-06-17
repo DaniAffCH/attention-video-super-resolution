@@ -35,7 +35,7 @@ class Generator(nn.Module):
 
         self.finalconv = ConvBlockBase(self.num_features)
 
-        self.upsampler = torch.nn.Upsample(size=(1024,576), mode='bilinear', align_corners=None, recompute_scale_factor=None)
+        self.upsampler = torch.nn.Upsample(size=(720, 1280), mode='bilinear', align_corners=None, recompute_scale_factor=None)
 
         self.restore=nn.Conv2d(self.num_features,3,1,1,0)
 

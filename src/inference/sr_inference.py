@@ -1,3 +1,4 @@
+
 from __future__ import absolute_import
 import torch
 import cv2
@@ -28,23 +29,34 @@ def inference(conf, testing = False):
     for sample in tqdm.tqdm(data_loader):
         s=torch.stack(sample["x"],dim=0)
         s=s.permute(1,0,4,2,3).to(device)
-        
+
         y=model(s)
         y=y.cpu()
-        residual = torch.abs(y[0].permute(1,2,0).detach() - sample["x"][len(sample["x"])//2][0])
+
+        ups= torch.nn.Upsample(size=(720, 1280), mode='bilinear', align_corners=None, recompute_scale_factor=None)
+
+        
+
+        upsampled = s[:,len(sample["x"])//2,:,:,:]
+        upsampled = ups(upsampled).cpu()
+        residual = torch.abs(y.detach() - upsampled)
         residual = residual.numpy()
 
-        frame = sample["referencePath"][0].split("/")[-1].split(".")[-2]
-        video = sample["referencePath"][0].split("/")[-2]
+        for i in range(y.shape[0]):
+            frame = sample["referencePath"][i].split("/")[-1].split(".")[-2]
+            video = sample["referencePath"][i].split("/")[-2]
 
-        inf_name = f"vid{video}_{frame}_inf.png"
-        res_name = f"vid{video}_{frame}_res.png"
+            inf_name = f"vid{video}_{frame}_inf.png"
+            res_name = f"vid{video}_{frame}_res.png"
+            original_name = f"vid{video}_{frame}_orig.png"
 
-        out = y[0].permute(1,2,0).detach().numpy() * 255
-        residual = residual * 255
-
-        cv2.imwrite(os.path.join(path, inf_name), out)
-        cv2.imwrite(os.path.join(path, res_name), residual)
+            out = y[i,:,:,:].permute(1,2,0).detach().numpy() * 255
+            singleres = residual[i,:,:,:].transpose((1,2,0)) * 255
+            orig = upsampled[i,:,:,:].detach().numpy()
+            orig = orig.transpose((1,2,0)) * 255
+            cv2.imwrite(os.path.join(path, inf_name), out)
+            cv2.imwrite(os.path.join(path, res_name), singleres)
+            cv2.imwrite(os.path.join(path, original_name), orig)
 
         del s 
         del y
