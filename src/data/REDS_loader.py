@@ -59,7 +59,7 @@ def getDataLoader(conf, split):
             A.RandomBrightnessContrast(p=0.2),
         ], additional_targets = targetdict)
     else:
-        transform=None
+        transform=A.Compose([ A.Identity()])
 
     rl = REDS_loader(conf, transform, split)
 
