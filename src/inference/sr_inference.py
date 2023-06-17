@@ -32,10 +32,11 @@ def inference(conf, testing = False):
         print(s.shape)
         y=model(s)
         y=y.cpu()
-        y=torch.nn.functional.interpolate(y, size=(), mode='bilinear', align_corners=None, recompute_scale_factor=None)
+        y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
         for i in range(conf['INFERENCE'].getint("n_updates")):
             y=model(y)
             y=y.cpu()
+            y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
 
 
         ups= torch.nn.Upsample(size=(720, 1280), mode='bilinear', align_corners=None, recompute_scale_factor=None)
