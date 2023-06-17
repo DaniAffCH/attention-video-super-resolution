@@ -30,6 +30,7 @@ def inference(conf, testing = False):
         s=torch.stack(sample["x"],dim=0)
         s=s.permute(1,0,4,2,3).to(device)
 
+        ups= torch.nn.Upsample(size=(720, 1280), mode='bilinear', align_corners=None, recompute_scale_factor=None)
         upsampled = s[:,len(sample["x"])//2,:,:,:]
         upsampled = ups(upsampled).cpu()
     
@@ -47,7 +48,7 @@ def inference(conf, testing = False):
             s[:,model.center_frame_index,:,:,:]=y
             y=s
 
-        ups= torch.nn.Upsample(size=(720, 1280), mode='bilinear', align_corners=None, recompute_scale_factor=None)
+        
 
         
 
