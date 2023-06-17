@@ -51,13 +51,15 @@ def getDataLoader(conf, split):
         raise Exception(f"Expected a dataset split train or val, given {split}")
 
     targetdict = {f"image{k}":"image" for k in range(conf["DEFAULT"].getint("n_neighbors") * 2 + 1)}
-
-    transform = A.Compose([
-        A.ToFloat(max_value=255, always_apply=True, p=1.0),
-        A.Rotate(limit = 60, p=0.3),
-        A.HorizontalFlip(p=0.5),
-        A.RandomBrightnessContrast(p=0.2),
-    ], additional_targets = targetdict)
+    if(conf['DEFAULT'].getboolean("aug")):
+        transform = A.Compose([
+            A.ToFloat(max_value=255, always_apply=True, p=1.0),
+            A.Rotate(limit = 60, p=0.3),
+            A.HorizontalFlip(p=0.5),
+            A.RandomBrightnessContrast(p=0.2),
+        ], additional_targets = targetdict)
+    else:
+        transform=None
 
     rl = REDS_loader(conf, transform, split)
 

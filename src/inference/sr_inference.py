@@ -15,7 +15,7 @@ import tqdm
 def inference(conf, testing = False):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Using {device}")
-    num_vid = conf["INFERENCE"].getint("video_number")
+    #num_vid = conf["INFERENCE"].getint("video_number")
     path = conf["INFERENCE"]["save_path"]
     model = Generator(conf).to(device)
     model.load_state_dict(torch.load("trained_models/"+conf['TRAINING'].get("name_model")))
