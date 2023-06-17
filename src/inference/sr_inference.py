@@ -39,7 +39,6 @@ def inference(conf, testing = False):
         y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
         s[:,model.center_frame_index,:,:,:]=y
         del y
-        print(y.shape)
         for i in range(conf['INFERENCE'].getint("n_updates")):
             y=model(s)
             print("a")
