@@ -46,7 +46,11 @@ def inference(conf, testing = False):
             y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
             print("b")
             s[:,model.center_frame_index,:,:,:]=y
+<<<<<<< HEAD
             print("c")
+=======
+            del y
+>>>>>>> eb59389d18bcac6bdf6a8b82cb4bd459c76dba83
             if(i!=conf['INFERENCE'].getint("n_updates")-1):
                 y=s
         y=y.cpu()
