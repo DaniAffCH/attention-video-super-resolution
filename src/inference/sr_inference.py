@@ -38,18 +38,18 @@ def inference(conf, testing = False):
         model = model.cpu()
         print(y.shape)
         y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
-        s[:,model.center_frame_index,:,:,:]=y
-        del y
+  
         for i in range(conf['INFERENCE'].getint("n_updates")):
             model = model.to(device)
+            s[:,model.center_frame_index,:,:,:]=y
+            del y
             y=model(s)
             model = model.cpu()
             print("a")
             y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
             print("b")
-            s[:,model.center_frame_index,:,:,:]=y
             print("c")
-            del y
+ 
         y=y.cpu()
 
         
