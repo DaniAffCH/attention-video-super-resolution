@@ -29,27 +29,29 @@ def inference(conf, testing = False):
     for sample in tqdm.tqdm(data_loader):
         s=torch.stack(sample["x"],dim=0)
         s=s.permute(1,0,4,2,3).to(device)
-        aux=s.clone()
+
+        upsampled = s[:,len(sample["x"])//2,:,:,:]
+        upsampled = ups(upsampled).cpu()
+    
         y=model(s)
         y=y.cpu()
         print(y.shape)
         y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
-        aux[:,model.center_frame_index,:,:,:]=y
-        y=aux
+        s[:,model.center_frame_index,:,:,:]=y
+        y=s
         print(y.shape)
         for i in range(conf['INFERENCE'].getint("n_updates")):
             y=model(y)
             y=y.cpu()
             y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
-            aux[:,model.center_frame_index,:,:,:]=y
-            y=aux
+            s[:,model.center_frame_index,:,:,:]=y
+            y=s
 
         ups= torch.nn.Upsample(size=(720, 1280), mode='bilinear', align_corners=None, recompute_scale_factor=None)
 
         
 
-        upsampled = s[:,len(sample["x"])//2,:,:,:]
-        upsampled = ups(upsampled).cpu()
+        
         residual = torch.abs(y.detach() - upsampled)
         residual = residual.numpy()
 
