@@ -29,9 +29,14 @@ def inference(conf, testing = False):
     for sample in tqdm.tqdm(data_loader):
         s=torch.stack(sample["x"],dim=0)
         s=s.permute(1,0,4,2,3).to(device)
-
+        print(s.shape)
         y=model(s)
         y=y.cpu()
+        y=torch.nn.functional.interpolate(y, size=(), mode='bilinear', align_corners=None, recompute_scale_factor=None)
+        for i in range(conf['INFERENCE'].getint("n_updates")):
+            y=model(y)
+            y=y.cpu()
+
 
         ups= torch.nn.Upsample(size=(720, 1280), mode='bilinear', align_corners=None, recompute_scale_factor=None)
 
