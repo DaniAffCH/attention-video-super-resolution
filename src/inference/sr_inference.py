@@ -33,9 +33,7 @@ def inference(conf, testing = False):
         s=torch.stack(sample["x"],dim=0)
         s=s.permute(1,0,4,2,3).to(device)
 
-        ups= torch.nn.Upsample(size=(720, 1280), mode='bilinear', align_corners=None, recompute_scale_factor=None)
-        upsampled = s[:,len(sample["x"])//2,:,:,:].cpu()
-        upsampled = ups(upsampled)
+        target = s[:,len(sample["x"])//2,:,:,:].cpu()
         model.to(device)
         y=model(s)
         model = model.to("cpu")
@@ -51,8 +49,7 @@ def inference(conf, testing = False):
             y=torch.nn.functional.interpolate(y, size=size, mode='bilinear', align_corners=None, recompute_scale_factor=None)
  
         y=y.to("cpu")
-        y=ups(y)
-        residual = torch.abs(y.detach() - upsampled)
+        residual = torch.abs(y.detach() - target)
         residual = residual.numpy()
 
         for i in range(y.shape[0]):
@@ -65,7 +62,7 @@ def inference(conf, testing = False):
 
             out = y[i,:,:,:].permute(1,2,0).detach().numpy() * 255
             singleres = residual[i,:,:,:].transpose((1,2,0)) * 255
-            orig = upsampled[i,:,:,:].detach().numpy()
+            orig = target[i,:,:,:].detach().numpy()
             orig = orig.transpose((1,2,0)) * 255
             cv2.imwrite(os.path.join(path, inf_name), out)
             cv2.imwrite(os.path.join(path, res_name), singleres)
