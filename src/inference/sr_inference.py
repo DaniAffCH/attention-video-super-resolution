@@ -52,15 +52,10 @@ def inference(conf, testing = False):
             model = model.to(device)
             y=model(s)
             model = model.to("cpu")
-            print("a")
             y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
-            print("b")
  
         y=y.to("cpu")
-
-        print("OK!!!!")
-
-        
+        y=ups(y)
         residual = torch.abs(y.detach() - upsampled)
         residual = residual.numpy()
 
