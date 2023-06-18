@@ -12,15 +12,18 @@ import numpy
 import torchvision.transforms.functional
 import tqdm
 
+@torch.no_grad()
 def inference(conf, testing = False):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Using {device}")
     #num_vid = conf["INFERENCE"].getint("video_number")
     path = conf["INFERENCE"]["save_path"]
-    model = Generator(conf).to(device)
+    model = Generator(conf)
     model.load_state_dict(torch.load("trained_models/"+conf['TRAINING'].get("name_model")))
 
     data_loader = getDataLoader(conf, "train")
+
+    model.eval()
 
     if not os.path.exists(path):
         os.makedirs(path)
@@ -31,28 +34,29 @@ def inference(conf, testing = False):
         s=s.permute(1,0,4,2,3).to(device)
 
         ups= torch.nn.Upsample(size=(720, 1280), mode='bilinear', align_corners=None, recompute_scale_factor=None)
-        upsampled = s[:,len(sample["x"])//2,:,:,:]
-        upsampled = ups(upsampled).cpu()
-    
+        upsampled = s[:,len(sample["x"])//2,:,:,:].cpu()
+        upsampled = ups(upsampled)
+        # MODELLO ! S ! ebbasta
+        model.to(device)
         y=model(s)
-        model = model.cpu()
-        print(y.shape)
+        model = model.to("cpu")
+        #S ! y 
         y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
   
         for i in range(conf['INFERENCE'].getint("n_updates")):
-            model = model.to(device)
+            torch.cuda.empty_cache()
+            print("trying to swap stuff")
             s[:,model.center_frame_index,:,:,:]=y
+            print("swapped!")
             del y
+            model = model.to(device)
             y=model(s)
-            model = model.cpu()
+            model = model.to("cpu")
             print("a")
             y=torch.nn.functional.interpolate(y, size=(180,320), mode='bilinear', align_corners=None, recompute_scale_factor=None)
             print("b")
-            print("c")
  
-        y=y.cpu()
-
-        
+        y=y.to("cpu")
 
         print("OK!!!!")
 
@@ -78,6 +82,7 @@ def inference(conf, testing = False):
 
         del s 
         del y
+        torch.cuda.empty_cache()
 
         if(testing):
             break
