@@ -5,19 +5,11 @@ import albumentations as A
 import torch
 import numpy
 
-"""
-    Methods
-    -------
-    __getitem__(idx):
-        It takes an index (possibly provided from torch data loader) and returns a dictionary.
-        - x represents the list of neighbors blurred images (including the target one)
-        - y represents the sharp image (which refers to the target)
-        - referencePath contains the description of the target processed i.e. the video it belongs to and the frame number  
-"""
+
 class REDS_loader(Dataset):
     def __init__(self, conf, transform, split):
         self.sharpdir =  os.path.join(conf["DATASET"]["root"], f"{split}_sharp/{split}/{split}_sharp")
-        self.blurdir = os.path.join(conf["DATASET"]["root"], f"{split}/{split}_blur_bicubic/X4")
+        self.blurdir = os.path.join(conf["DATASET"]["root"], f"{split}_blur/{split}/{split}_blur")
         self.transform = transform
 
         maxsharp = max([int(i) for i in os.listdir(self.sharpdir)])
