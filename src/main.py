@@ -6,6 +6,7 @@ import configparser
 from debug.autotest import autotest
 from train.trainer import train
 from evaluation.evaluate import evaluate
+from inference.sr_inference import inference
 
 
 def parse_args():
@@ -21,6 +22,10 @@ def parse_args():
     
     parser.add_argument('--evaluate',
                         help='trains the network')
+    
+    parser.add_argument('--inference',
+                        help='perform inference of the current model',
+                        action='store_true')
 
     args = parser.parse_args()
 
@@ -43,6 +48,10 @@ def main():
     
     elif(args.evaluate):
         evaluate(config, args.evaluate)
+    
+    elif(args.inference):
+        inference(config)
+
 
 if __name__ == '__main__':
     main()

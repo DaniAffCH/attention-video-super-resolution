@@ -13,7 +13,7 @@ def evaluate(conf, path, test=False):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Using {device}")
 
-    dlVal = getDataLoader(conf, "val")
+    dlVal = getDataLoader(conf, "val", True)
 
     gen = Generator(conf).to(device)
     
@@ -27,6 +27,10 @@ def evaluate(conf, path, test=False):
 
         Ohat = gen(x)
         O = sanitizeGT(batch["y"], device)
+
+        print(O.shape)
+        print(Ohat.shape)
+
 
         res = psnr(O ,Ohat)
         psnr_list.append(float(res))

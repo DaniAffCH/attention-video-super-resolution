@@ -5,15 +5,7 @@ import albumentations as A
 import torch
 import numpy
 
-"""
-    Methods
-    -------
-    __getitem__(idx):
-        It takes an index (possibly provided from torch data loader) and returns a dictionary.
-        - x represents the list of neighbors blurred images (including the target one)
-        - y represents the sharp image (which refers to the target)
-        - referencePath contains the description of the target processed i.e. the video it belongs to and the frame number  
-"""
+
 class REDS_loader(Dataset):
     def __init__(self, conf, transform, split):
         self.sharpdir =  os.path.join(conf["DATASET"]["root"], f"{split}_sharp/{split}/{split}_sharp")
@@ -45,20 +37,26 @@ class REDS_loader(Dataset):
 
         return {"x":neighbors_images_blur, "y":target_sharp, "referencePath": f"{video}/{frame}.png"}
 
-def getDataLoader(conf, split):
+def getDataLoader(conf, split, isEvaluation = False):
 
     if split not in ["train", "val"]:
         raise Exception(f"Expected a dataset split train or val, given {split}")
 
     targetdict = {f"image{k}":"image" for k in range(conf["DEFAULT"].getint("n_neighbors") * 2 + 1)}
 
-    transform = A.Compose([
-        A.ToFloat(max_value=255, always_apply=True, p=1.0),
-        A.Rotate(limit = 60, p=0.3),
-        A.HorizontalFlip(p=0.5),
-        A.RandomBrightnessContrast(p=0.2),
-        A.RandomCrop(conf['DEFAULT'].getint("image_height"), conf['DEFAULT'].getint("image_width"))
-    ], additional_targets = targetdict)
+    if(isEvaluation):
+        transform = A.Compose([
+            A.ToFloat(max_value=255, always_apply=True, p=1.0),
+            A.augmentations.crops.transforms.CenterCrop (conf["DEFAULT"].getint("image_height"), conf["DEFAULT"].getint("image_width"), always_apply=True, p=1.0)
+        ], additional_targets = targetdict)
+    else:
+        transform = A.Compose([
+            A.ToFloat(max_value=255, always_apply=True, p=1.0),
+            A.Rotate(limit = 60, p=0.3),
+            A.HorizontalFlip(p=0.5),
+            A.RandomBrightnessContrast(p=0.2),
+            A.RandomCrop(conf['DEFAULT'].getint("image_height"), conf['DEFAULT'].getint("image_width"))
+        ], additional_targets = targetdict)
 
     rl = REDS_loader(conf, transform, split)
 

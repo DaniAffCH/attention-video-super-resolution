@@ -22,7 +22,6 @@ def trainOne(model, dataloader, optimizer, device, loss, conf, isTest=False):
         Ohat = model(x)
 
         O = sanitizeGT(batch["y"], device)
-
         l = loss(Ohat, O)
 
         l.backward()
@@ -33,7 +32,7 @@ def trainOne(model, dataloader, optimizer, device, loss, conf, isTest=False):
 
         if(isTest):
             return .0
-        
+
         n += 1
 
         with torch.no_grad():

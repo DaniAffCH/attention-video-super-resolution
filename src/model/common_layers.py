@@ -135,6 +135,9 @@ class AttentionModule(nn.Module):
         self.sigmoid=nn.Sigmoid()
         self.fusion=nn.Conv2d(num_features*num_frames,num_features,1,1,0)
         self.spatial_attention=nn.Conv2d(num_features*num_frames,num_features,1,1,0)
+        half=int(num_features/2)
+        self.avg_pool=torch.nn.AdaptiveAvgPool3d((half, None, None))
+        self.max_pool=torch.nn.AdaptiveMaxPool3d((half, None, None))
 
 
     def forward(self,aligned_feat):
@@ -157,7 +160,9 @@ class AttentionModule(nn.Module):
         fused_feature=self.fusion(aligned_feat)
 
         #spatial attention
-        sp_attn=self.spatial_attention(aligned_feat)
+        avg_feat_over_channels=self.avg_pool(aligned_feat.view(b,t,-1,h,w))
+        max_feat_over_channels=self.max_pool(aligned_feat.view(b,t,-1,h,w))
+        sp_attn=self.spatial_attention(torch.cat((avg_feat_over_channels,max_feat_over_channels),dim=2).view(b,t*c,h,w))
         sp_attn=self.sigmoid(sp_attn)             #mask
         important_features=fused_feature*sp_attn
         return important_features
