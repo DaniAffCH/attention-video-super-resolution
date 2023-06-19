@@ -35,8 +35,6 @@ class Generator(nn.Module):
 
         self.finalconv = ConvBlockBase(self.num_features)
 
-        self.upsampler = torch.nn.Upsample(size=(720, 1280), mode='bilinear', align_corners=None, recompute_scale_factor=None)
-
         self.restore=nn.Conv2d(self.num_features,3,1,1,0)
 
 
@@ -114,9 +112,6 @@ class Generator(nn.Module):
         residual=self.restore(fused_feature) #this has to be pixel-shuffled in order to get bigger
 
         upsampled_x=x[:,self.center_frame_index,:,:,:]
-
-        upsampled_x = self.upsampler(upsampled_x)
-        residual = self.upsampler(residual)
 
         image_hq=upsampled_x+residual
 
