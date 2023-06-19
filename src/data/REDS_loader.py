@@ -17,7 +17,7 @@ import numpy
 class REDS_loader(Dataset):
     def __init__(self, conf, transform, split):
         self.sharpdir =  os.path.join(conf["DATASET"]["root"], f"{split}_sharp/{split}/{split}_sharp")
-        self.blurdir = os.path.join(conf["DATASET"]["root"], f"{split}_blur/{split}/{split}_blur")
+        self.blurdir = os.path.join(conf["DATASET"]["root"], f"{split}/{split}_blur_bicubic/X4")
         self.transform = transform
 
         maxsharp = max([int(i) for i in os.listdir(self.sharpdir)])
@@ -51,6 +51,7 @@ def getDataLoader(conf, split, isEvaluation = False):
         raise Exception(f"Expected a dataset split train or val, given {split}")
 
     targetdict = {f"image{k}":"image" for k in range(conf["DEFAULT"].getint("n_neighbors") * 2 + 1)}
+
     if(isEvaluation):
         transform = A.Compose([
             A.ToFloat(max_value=255, always_apply=True, p=1.0),
