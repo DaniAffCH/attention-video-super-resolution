@@ -52,6 +52,8 @@ def inference(conf, testing = False):
         residual = torch.abs(y.detach() - target)
         residual = residual.numpy()
 
+        print("pre for")
+
         for i in range(y.shape[0]):
             frame = sample["referencePath"][i].split("/")[-1].split(".")[-2]
             video = sample["referencePath"][i].split("/")[-2]
@@ -64,6 +66,7 @@ def inference(conf, testing = False):
             singleres = residual[i,:,:,:].transpose((1,2,0)) * 255
             orig = target[i,:,:,:].detach().numpy()
             orig = orig.transpose((1,2,0)) * 255
+            print("saving....")
             cv2.imwrite(os.path.join(path, inf_name), out)
             cv2.imwrite(os.path.join(path, res_name), singleres)
             cv2.imwrite(os.path.join(path, original_name), orig)
