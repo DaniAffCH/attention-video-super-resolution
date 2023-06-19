@@ -14,5 +14,6 @@ while True:
 	subprocess.run(bash_command, shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 	bash_command = f"rm {file}"
 	subprocess.run(bash_command, shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+	print(f"[COPYFILE] PID = {os.getpid()}")
 	time.sleep(update)
 	print(f"[COPYFILE] PID {os.getpid()}")

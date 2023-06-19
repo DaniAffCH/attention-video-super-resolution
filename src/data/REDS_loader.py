@@ -45,21 +45,26 @@ class REDS_loader(Dataset):
 
         return {"x":neighbors_images_blur, "y":target_sharp, "referencePath": f"{video}/{frame}.png"}
 
-def getDataLoader(conf, split):
+def getDataLoader(conf, split, isEvaluation = False):
 
     if split not in ["train", "val"]:
         raise Exception(f"Expected a dataset split train or val, given {split}")
 
     targetdict = {f"image{k}":"image" for k in range(conf["DEFAULT"].getint("n_neighbors") * 2 + 1)}
-    if(conf['DEFAULT'].getboolean("aug")):
+
+    if(isEvaluation):
+        transform = A.Compose([
+            A.ToFloat(max_value=255, always_apply=True, p=1.0),
+            A.augmentations.crops.transforms.CenterCrop (conf["DEFAULT"].getint("image_height"), conf["DEFAULT"].getint("image_width"), always_apply=True, p=1.0)
+        ], additional_targets = targetdict)
+    else:
         transform = A.Compose([
             A.ToFloat(max_value=255, always_apply=True, p=1.0),
             A.Rotate(limit = 60, p=0.3),
             A.HorizontalFlip(p=0.5),
             A.RandomBrightnessContrast(p=0.2),
+            A.RandomCrop(conf['DEFAULT'].getint("image_height"), conf['DEFAULT'].getint("image_width"))
         ], additional_targets = targetdict)
-    else:
-        transform=A.Compose([ A.ToFloat(max_value=255, always_apply=True, p=1.0)], additional_targets=targetdict)
 
     rl = REDS_loader(conf, transform, split)
 
