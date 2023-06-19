@@ -21,7 +21,7 @@ def inference(conf, testing = False):
     model.load_state_dict(torch.load("trained_models/"+conf['TRAINING'].get("name_model")))
     size=(conf["DEFAULT"].getint("image_height"),conf["DEFAULT"].getint("image_width"))
 
-    data_loader = getDataLoader(conf, "train")
+    data_loader = getDataLoader(conf, "train", True)
 
     model.eval()
 
