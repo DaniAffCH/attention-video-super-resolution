@@ -27,11 +27,6 @@ def evaluate(conf, path, test=False):
 
         Ohat = gen(x)
         O = sanitizeGT(batch["y"], device)
-
-        print(O.shape)
-        print(Ohat.shape)
-
-
         res = psnr(O ,Ohat)
         psnr_list.append(float(res))
 
