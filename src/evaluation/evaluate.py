@@ -13,7 +13,7 @@ def evaluate(conf, path, test=False):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Using {device}")
 
-    dlVal = getDataLoader(conf, "val")
+    dlVal = getDataLoader(conf, "val", True)
 
     gen = Generator(conf).to(device)
     
