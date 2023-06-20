@@ -6,12 +6,11 @@ This repository contains a deep learning model that achieves video super-resolut
  Additionally, the entire network is designed to be scalable, enabling customization based on the number of neighbors and features used, so as to handle the performance-inference time tradeoff.
  
 ## Architecture
-The architecture is formed by three principal blocks: the feature extractor, the align module, and the spatiotemporal attention layer.
-- The feature extractor is a cascade of convolutional layers, which provides the desired number of features.
-- The align module uses a pyramidal representation of frames in order to learn the offsets at different scales and to use these for the deformable convolutions.
-Such offsets are obtained by combining the features of each frame at the same level of the pyramid and then applying a deformable convolution. The result is upsampled until we get the final set of aligned features.
-- The final spatiotemporal layer performs a feature fusion by first computing the correlation between the center frame and all its neighbors. Afterward, it performs a convolution to fuse the features, and finally, it computes the spatial attention for each frame using pooling operations and multiplying the attention map for the features frame-wise.
-In the end, the residual is computed by another convolutional stage and added to the original upsampled image.
+The architecture aims to predict the residual that enhances image sharpness. The network consists of three principal blocks:
+- The **Feature Extractor** is a series of convolutional layers that extract the desired number of features from the input.
+- The **Align Module** uses a pyramidal representation of frames to learn offsets at different scales. These offsets are used for deformable convolutions. The align module combines the features of each frame at the same level of the pyramid and applies deformable convolutions to obtain aligned features. The result is upsampled until the final set of aligned features is obtained.
+- The **Spatiotemporal Attention** Layer performs feature fusion by first computing the correlation between the center frame and all its neighbors. Then, it applies a convolution to fuse the features. Finally, it computes the spatial attention for each frame using pooling operations and multiplies the attention map with the frame-wise features.
+- The actual residual is computed by another convolutional stage and added to the original upsampled image.
 
 --------------- TODO: foto architettura ---------------
 
