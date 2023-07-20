@@ -1,7 +1,11 @@
 # attention-video-super-resolution
 This repository contains a deep learning model that achieves video super-resolution tasks by leveraging cross-attention and dynamic filtering. The model predicts each frame by taking into account not only the low resolution itself but also its neighboring frames. In order to capture the dependencies among nearby frames, the models use Vision Transformers.
 
---------------- TODO: foto piu sghecia ---------------  
+<br />
+<div align="center">
+  <img src="./assets/diff.png" alt="Logo" width="600" height="auto">
+</div>
+<br />
 
  Additionally, the entire network is designed to be scalable, enabling customization based on the number of neighbors and features used, so as to handle the performance-inference time tradeoff.
  
