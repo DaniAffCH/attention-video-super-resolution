@@ -22,11 +22,14 @@ The architecture aims to predict the residual that enhances image sharpness. The
 - The **Spatiotemporal** Attention Layer fuses features through correlation computation and convolution. It then applies spatial attention with pooling and multiplies it with frame-wise features.
 - The actual residual is computed by another convolutional stage and added to the original upsampled image.
 
---------------- TODO: foto architettura ---------------
-
-## Results 
+<br />
+<div align="center">
+  <img src="./assets/network.png" width="600" height="auto">
+</div>
+<br />
 
 ## Installation
+
 
 ## Usage
 
