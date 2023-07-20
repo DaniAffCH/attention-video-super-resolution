@@ -6,7 +6,8 @@ This repository contains a deep learning model that achieves video super-resolut
 <br />
 <div align="center">
   <img src="./assets/output.gif" width="600" height="auto">
-  <h3> Result on a video </h3>
+  <h3> Comparison between the original video (bottom) and the predicted video (top). </h3>
+  <hr>
   <img src="./assets/diff.png" width="600" height="auto">
   <h3> Single frame difference </h3>
 </div>
